@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成都上门二组 · 数据看板</title>
+<script src="cq_data.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans SC',sans-serif;background:#f0f2f5;color:#1f2937;padding:16px}
+.header{background:linear-gradient(135deg,#1a3a5c,#2a5a8c);color:#fff;padding:20px 28px;border-radius:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.header h1{font-size:22px;font-weight:700;letter-spacing:.5px}
+.header .meta{font-size:13px;opacity:.88;display:flex;gap:18px;flex-wrap:wrap}
+.header .meta span{display:inline-flex;align-items:center;gap:4px}
+.header .badge{font-size:11px;opacity:.65}
+.toolbar{background:#fff;border-radius:10px;padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.toolbar label{font-weight:600;font-size:13px;color:#374151}
+.toolbar select{padding:5px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;}
+.toolbar select:focus{outline:2px solid #3b82f6;outline-offset:2px}
+.nav-tabs{display:none;flex-wrap:wrap;gap:4px;background:#fff;border-radius:10px;padding:8px 12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.nav-tabs.show{display:flex}
+.nav-tabs a{padding:4px 9px;font-size:12px;border-radius:4px;color:#374151;text-decoration:none;background:#f3f4f6;transition:all .12s;white-space:nowrap}
+.nav-tabs a:hover{background:#dbeafe;color:#1d4ed8}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:9px;margin-bottom:14px}
+.card{background:#fff;border-radius:10px;padding:12px 10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:5px solid #e5e7eb;transition:transform .12s}
+.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.card .label{font-size:11px;color:#6b7280;margin-bottom:3px;font-weight:500}
+.card .value{font-size:19px;font-weight:700;margin-bottom:2px}
+.card .sub{font-size:10px;color:#9ca3af}
+.card.green{border-left-color:#10b981}
+.card.green .value{color:#059669}
+.card.red{border-left-color:#ef4444}
+.card.red .value{color:#dc2626}
+.ranking-section{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.ranking-section h2{font-size:15px;margin-bottom:10px;color:#1f2937;display:flex;align-items:center;gap:6px}
+.ranking-table{width:100%;border-collapse:collapse;font-size:12px}
+.ranking-table th{background:#f8fafc;padding:7px 8px;text-align:center;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;position:sticky;top:0}
+.ranking-table td{padding:6px 8px;text-align:center;border-bottom:1px solid #f1f5f9}
+.ranking-table tr:hover td{background:#f0f7ff}
+.ranking-table .rank{font-weight:700;color:#6366f1;width:32px}
+.ranking-table .rank.top3{color:#f59e0b}
+.ranking-table .name{font-weight:600;text-align:left}
+.section{background:#fff;border-radius:10px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow:hidden}
+.section-header{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;cursor:pointer;user-select:none;transition:background .12s;border-bottom:1px solid #f1f5f9}
+.section-header:hover{background:#f8fafc}
+.section-header h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.section-header .toggle{font-size:11px;color:#9ca3af;transition:transform .2s}
+.section-header .toggle.open{transform:rotate(90deg)}
+.section-body{padding:0;overflow-x:auto;display:none}
+.section-body.open{display:block}
+.section-table{width:100%;border-collapse:collapse;font-size:11px;min-width:600px}
+.section-table th{background:#f8fafc;padding:6px 6px;text-align:center;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;font-size:11px}
+.section-table td{padding:5px 6px;text-align:center;border-bottom:1px solid #f1f5f9;white-space:nowrap;font-size:11px}
+.section-table tr:hover td{background:#f0f7ff}
+.section-table .indicator{text-align:left;font-weight:500;color:#1f2937}
+.section-table .target{color:#6b7280;font-size:10px}
+.section-table .monthly{font-weight:600;color:#1f2937}
+.section-table .rate{padding:1px 7px;border-radius:3px;font-weight:600;display:inline-block;font-size:10px}
+.section-table .rate.green{background:#d1fae5;color:#065f46}
+.section-table .rate.yellow{background:#fef3c7;color:#92400e}
+.section-table .rate.red{background:#fee2e2;color:#991b1b}
+.summary-row td{font-weight:700;background:#f0f9ff !important;border-top:2px solid #93c5fd;font-size:11px}
+.footer{text-align:center;font-size:11px;color:#9ca3af;padding:16px 0 6px}
+@media(max-width:768px){
+  .cards{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .card .value{font-size:16px}
+  .header h1{font-size:18px}
+  .section-table{font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📊 成都上门二组 · 数据看板</h1>
+    <div class="meta">
+      <span>📅 数据日期： <b id="dataDate">-</b></span>
+      <span>👥 员工： <b id="empCount">-</b> 人</span>
+      <span>📋 记录： <b id="recCount">-</b> 条</span>
+      <span>📆 周期： <b id="dateRange">-</b></span>
+    </div>
+  </div>
+  <div class="badge">数据来源：cq_data.js</div>
+</div>
+
+<div class="toolbar">
+  <label for="viewSelect">🔍 视图：</label>
+  <select id="viewSelect">
+    <option value="all">👥 全部员工</option>
+    <option value="individual">👤 个人视图</option>
+    <option value="ranking">🏆 排名模式</option>
+  </select>
+  <span id="personSelectorWrap" style="display:none;align-items:center;gap:6px">
+    <label for="personSelect" style="font-weight:500;font-size:13px;color:#374151">员工：</label>
+    <select id="personSelect"></select>
+  </span>
+</div>
+
+<div id="navTabs" class="nav-tabs"></div>
+
+<div id="cardsContainer" class="cards"></div>
+
+<div id="rankingSection" class="ranking-section">
+  <h2>🏆 核心指标综合排名  <span style="font-weight:400;font-size:12px;color:#6b7280">加单率得分×50% + 人效得分×50%</span></h2>
+  <div class="table-wrap" style="overflow-x:auto">
+    <table class="ranking-table" id="rankingTable">
+      <thead>
+        <tr>
+          <th>#</th><th style="text-align:left">员工</th><th>加单率</th><th>加单率得分</th><th>3C人效</th><th>人效得分</th><th>综合总分</th>
+        </tr>
+      </thead>
+      <tbody id="rankingBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="sectionsContainer"></div>
+
+<div class="footer">成都上门二组 · 数据看板 v2.0</div>
+
+<script>
+// ========== DATA LOADING ==========
+const RAW_DATA = typeof RAW !== 'undefined' ? RAW : [];
+const groupData = RAW_DATA.filter(d => d['上门组'] === '成都上门二组');
+const allDates = [...new Set(groupData.map(d => d['数据日期']))].sort();
+const groupNames = [...new Set(groupData.map(d => d['员工姓名']))].sort();
+
+document.getElementById('dataDate').textContent = allDates[allDates.length-1] || '-';
+document.getElementById('empCount').textContent = groupNames.length;
+document.getElementById('recCount').textContent = groupData.length;
+document.getElementById('dateRange').textContent = (allDates[0]||'')+' ~ '+(allDates[allDates.length-1]||'');
+
+// Populate person selector
+const personSelect = document.getElementById('personSelect');
+groupNames.forEach(n => {
+  const opt = document.createElement('option');
+  opt.value = n; opt.textContent = n; personSelect.appendChild(opt);
+});
+
+// ========== VALUE PARSING ==========
+function parseVal(v) {
+  if (v===null||v===undefined||v===''||v==='null'||v==='undefined') return null;
+  if (typeof v==='number') return v;
+  const s = String(v).trim().replace(/,/g,'');
+  const isPct = s.includes('%');
+  const num = parseFloat(s.replace(/%/g,''));
+  if (isNaN(num)) return null;
+  return isPct ? num/100 : num;
+}
+
+// ========== AGGREGATION HELPERS ==========
+function avgForEmp(emp, field) {
+  const rows = groupData.filter(d => d['员工姓名']===emp && d[field]!==null && d[field]!=='' && d[field]!=='null');
+  const vals = rows.map(r => parseVal(r[field])).filter(v => v!==null);
+  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+}
+function sumForEmp(emp, field) {
+  const rows = groupData.filter(d => d['员工姓名']===emp && d[field]!==null && d[field]!=='' && d[field]!=='null');
+  const vals = rows.map(r => parseVal(r[field])).filter(v => v!==null);
+  return vals.length ? vals.reduce((a,b)=>a+b,0) : null;
+}
+function getEmpDaily(emp, field, date) {
+  const row = groupData.find(d => d['员工姓名']===emp && d['数据日期']===date);
+  return row ? parseVal(row[field]) : null;
+}
+
+// ========== 11 CORE METRICS ==========
+const CORE = [
+  {label:'加单率', field:'加单率', target:0.085, higher:true, fmt:v=>v!==null?(v*100).toFixed(2)+'%':'-'},
+  {label:'加单金额', field:'加单金额', target:1500, higher:true, fmt:v=>v!==null?Math.round(v)+'元':'-'},
+  {label:'3C成交人效', field:'3C成交人效', target:10, higher:true, fmt:v=>v!==null?v.toFixed(2):'-'},
+  {label:'企微回复及时率', field:'企微回复及时率-直营', target:0.85, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+  {label:'跟进及时率', field:'跟进及时率-全渠道', target:0.95, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+  {label:'履约及时率', field:'京东一站换新履约及时率', target:0.925, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+  {label:'取货及时率', field:'京东一站换新取货及时率', target:0.96, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+  {label:'旧机成交率', field:'一站换新旧机收货成交率', target:0.88, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+  {label:'交付添加率', field:'交付用户添加率', target:0.88, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+  {label:'催单率', field:'催单率-考核', target:0.02, higher:false, fmt:v=>v!==null?(v*100).toFixed(2)+'%':'-'},
+  {label:'ETA准时率', field:'多品类ETA履约准时率', target:0.98, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+];
+
+function weeklyAvg(field) {
+  const vals = groupData.map(d => parseVal(d[field])).filter(v => v!==null);
+  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+}
+
+function renderCards() {
+  const container = document.getElementById('cardsContainer');
+  container.innerHTML = '';
+  CORE.forEach(m => {
+    const val = weeklyAvg(m.field);
+    const ok = val!==null ? (m.higher ? val>=m.target : val<=m.target) : false;
+    const card = document.createElement('div');
+    card.className = 'card' + (ok ? ' green' : ' red');
+    card.innerHTML = `<div class="label">${m.label}</div><div class="value">${m.fmt(val)}</div><div class="sub">目标: ${m.fmt(m.target)}</div>`;
+    container.appendChild(card);
+  });
+}
+
+// ========== RANKING ==========
+function computeRanking() {
+  return groupNames.map(name => {
+    const jd = avgForEmp(name, '加单率');
+    const rx = avgForEmp(name, '3C成交人效');
+    const jdS = jd!==null ? Math.min(jd/0.085*100,100) : 0;
+    const rxS = rx!==null ? Math.min(rx/10*100,100) : 0;
+    return {name, jd, rx, jdS, rxS, total: jdS*0.5 + rxS*0.5};
+  }).sort((a,b)=>b.total-a.total);
+}
+
+function renderRanking() {
+  const scores = computeRanking().slice(0,20);
+  const tbody = document.getElementById('rankingBody');
+  tbody.innerHTML = '';
+  scores.forEach((s,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="rank ${i<3?'top3':''}">${i+1}</td>
+      <td class="name">${s.name}</td>
+      <td>${s.jd!==null?(s.jd*100).toFixed(2)+'%':'-'}</td>
+      <td>${s.jdS.toFixed(1)}</td>
+      <td>${s.rx!==null?s.rx.toFixed(2):'-'}</td>
+      <td>${s.rxS.toFixed(1)}</td>
+      <td style="font-weight:700;color:#6366f1">${s.total.toFixed(1)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ========== 10 SECTIONS ==========
+const SECTIONS = [
+  {id:'催单率', title:'🔔 催单率', inds:[
+    {label:'催单率-考核', field:'催单率-考核', target:0.02, higher:false, fmt:v=>v!==null?(v*100).toFixed(2)+'%':'-'}
+  ]},
+  {id:'入库超时率', title:'📦 入库超时率', inds:[
+    {label:'超时未入库量', field:'超时未入库量', target:0, higher:false, fmt:v=>v!==null?v.toFixed(0):'-'}
+  ]},
+  {id:'普通单过程', title:'📋 普通单过程', inds:[
+    {label:'3C上门提交成交率', field:'3C上门提交成交率-用户维度(非一站换新)', target:0.80, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+    {label:'跟进及时率-全渠道', field:'跟进及时率-全渠道', target:0.95, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+    {label:'企微回复及时率-直营', field:'企微回复及时率-直营', target:0.85, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'}
+  ]},
+  {id:'跟进及时率', title:'📞 跟进及时率', inds:[
+    {label:'跟进及时率-全渠道', field:'跟进及时率-全渠道', target:0.95, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'}
+  ]},
+  {id:'加单率', title:'📈 加单率', inds:[
+    {label:'加单率', field:'加单率', target:0.085, higher:true, fmt:v=>v!==null?(v*100).toFixed(2)+'%':'-'}
+  ]},
+  {id:'ETA履约', title:'⏱ ETA履约', inds:[
+    {label:'多品类ETA履约准时率', field:'多品类ETA履约准时率', target:0.98, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'}
+  ]},
+  {id:'一站式', title:'🔄 一站式', inds:[
+    {label:'履约及时率', field:'京东一站换新履约及时率', target:0.925, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+    {label:'取货及时率', field:'京东一站换新取货及时率', target:0.96, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+    {label:'跟进及时率', field:'京东一站换新跟进及时率', target:0.95, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+    {label:'旧机成交率', field:'一站换新旧机收货成交率', target:0.88, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'}
+  ]},
+  {id:'交付添加', title:'🤝 交付添加', inds:[
+    {label:'交付用户添加率', field:'交付用户添加率', target:0.88, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'}
+  ]},
+  {id:'3C业务', title:'💻 3C业务', inds:[
+    {label:'3C成交人效', field:'3C成交人效', target:10, higher:true, fmt:v=>v!==null?v.toFixed(2):'-'},
+    {label:'提交订单量', field:'3C上门提交订单量', target:null, higher:true, fmt:v=>v!==null?v.toFixed(0):'-'},
+    {label:'成交订单量', field:'3C上门成交订单量', target:null, higher:true, fmt:v=>v!==null?v.toFixed(0):'-'},
+    {label:'回收额(自营)', field:'3C上门自营成交回收额', target:null, higher:true, fmt:v=>v!==null?Math.round(v)+'元':'-'}
+  ]},
+  {id:'服务质量', title:'⭐ 服务质量', inds:[
+    {label:'员工服务分-直营', field:'员工服务分-直营', target:4.5, higher:true, fmt:v=>v!==null?v.toFixed(2):'-'},
+    {label:'工单回复及时率', field:'工单30min回复及时率', target:0.95, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'},
+    {label:'质检准确率', field:'质检准确率', target:0.98, higher:true, fmt:v=>v!==null?(v*100).toFixed(1)+'%':'-'}
+  ]}
+];
+
+function achRate(actual, target, higher) {
+  if (actual===null||target===null) return null;
+  if (target===0) return actual===0?100:0;
+  if (higher) return Math.min(actual/target*100, 100);
+  return actual===0?100:Math.min(target/actual*100, 100);
+}
+
+function rateClass(r) {
+  if (r===null) return '';
+  if (r>=100) return 'green';
+  if (r>=96) return 'yellow';
+  return 'red';
+}
+
+function sumAcrossAllEmps(field, date) {
+  let total=0, cnt=0;
+  groupNames.forEach(name => {
+    const v = date ? getEmpDaily(name,field,date) : avgForEmp(name,field);
+    if (v!==null) { total+=v; cnt++; }
+  });
+  return cnt>0 ? total/cnt : null;
+}
+
+function renderSections(person) {
+  const container = document.getElementById('sectionsContainer');
+  container.innerHTML = '';
+  const empList = person==='all' ? groupNames : [person];
+
+  SECTIONS.forEach(sec => {
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.id = 'sec-'+sec.id;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'section-header';
+    hdr.innerHTML = `<h3>${sec.title} <span style="font-weight:400;font-size:11px;color:#9ca3af">(${sec.inds.length}项指标)</span></h3><span class="toggle">▶</span>`;
+    hdr.onclick = function(){
+      const b=this.nextElementSibling, t=this.querySelector('.toggle');
+      b.classList.toggle('open'); t.classList.toggle('open');
+    };
+    div.appendChild(hdr);
+
+    const body = document.createElement('div');
+    body.className = 'section-body';
+
+    const tbl = document.createElement('table');
+    tbl.className = 'section-table';
+
+    // Build header
+    const nInd = sec.inds.length;
+    let hRow = '<thead><tr><th style="min-width:70px">员工</th>';
+    sec.inds.forEach(ind => {
+      hRow += `<th>${ind.label}<br><span style="font-weight:400;color:#6b7280;font-size:10px">目标: ${ind.fmt(ind.target)}</span></th><th style="min-width:52px">达成率</th>`;
+    });
+    allDates.forEach(d => { hRow += `<th>${d.slice(5)}</th>`; });
+    hRow += '</tr></thead>';
+    tbl.innerHTML = hRow;
+    const tbody = document.createElement('tbody');
+
+    // Data rows
+    empList.forEach(name => {
+      let row = `<tr><td class="indicator">${name}</td>`;
+      sec.inds.forEach(ind => {
+        const val = avgForEmp(name, ind.field);
+        const rate = achRate(val, ind.target, ind.higher);
+        row += `<td class="monthly">${ind.fmt(val)}</td><td><span class="rate ${rateClass(rate)}">${rate!==null?rate.toFixed(1)+'%':'-'}</span></td>`;
+      });
+      allDates.forEach(d => {
+        if (nInd === 1) {
+          const v = getEmpDaily(name, sec.inds[0].field, d);
+          row += `<td>${sec.inds[0].fmt(v)}</td>`;
+        } else {
+          // For multi-indicator, show first indicator daily
+          const v = getEmpDaily(name, sec.inds[0].field, d);
+          row += `<td style="font-size:10px;color:#6b7280">${sec.inds[0].fmt(v)}</td>`;
+        }
+      });
+      row += '</tr>';
+      tbody.innerHTML += row;
+    });
+
+    // Summary row for "all" view
+    if (person === 'all') {
+      let srow = '<tr class="summary-row"><td>📊 全员均值</td>';
+      sec.inds.forEach(ind => {
+        let tot=0, cnt=0;
+        groupNames.forEach(nm => { const v=avgForEmp(nm, ind.field); if(v!==null){tot+=v;cnt++;} });
+        const avg = cnt>0 ? tot/cnt : null;
+        const rate = achRate(avg, ind.target, ind.higher);
+        srow += `<td class="monthly">${ind.fmt(avg)}</td><td><span class="rate ${rateClass(rate)}">${rate!==null?rate.toFixed(1)+'%':'-'}</span></td>`;
+      });
+      allDates.forEach(d => {
+        if (nInd === 1) {
+          let tot=0, cnt=0;
+          groupNames.forEach(nm => { const v=getEmpDaily(nm, sec.inds[0].field, d); if(v!==null){tot+=v;cnt++;} });
+          srow += `<td>${sec.inds[0].fmt(cnt>0?tot/cnt:null)}</td>`;
+        } else {
+          srow += '<td style="color:#9ca3af">-</td>';
+        }
+      });
+      srow += '</tr>';
+      tbody.innerHTML += srow;
+    }
+
+    tbl.appendChild(tbody);
+    body.appendChild(tbl);
+    div.appendChild(body);
+    container.appendChild(div);
+  });
+}
+
+// ========== NAV TABS ==========
+function renderNav(person) {
+  const nav = document.getElementById('navTabs');
+  nav.innerHTML = '';
+  if (person === 'all') { nav.classList.remove('show'); return; }
+  nav.classList.add('show');
+  const ids = ['催单率','入库超时率','普通单过程','跟进及时率','加单率','ETA履约','一站式','交付添加','3C业务','服务质量'];
+  ids.forEach(id => {
+    const a = document.createElement('a');
+    a.href='#'; a.textContent=id;
+    a.onclick = e => {
+      e.preventDefault();
+      const el = document.getElementById('sec-'+id);
+      if (el) { el.scrollIntoView({behavior:'smooth',block:'start'});
+        const b=el.querySelector('.section-body'), t=el.querySelector('.toggle');
+        if(b) b.classList.add('open'); if(t) t.classList.add('open'); }
+    };
+    nav.appendChild(a);
+  });
+}
+
+// ========== VIEW MANAGEMENT ==========
+function applyView(view, person) {
+  // Show/hide sections based on view
+  const cards = document.getElementById('cardsContainer');
+  const ranking = document.getElementById('rankingSection');
+  const sections = document.getElementById('sectionsContainer');
+
+  if (view === 'ranking') {
+    cards.style.display = 'none';
+    ranking.style.display = 'block';
+    sections.style.display = 'none';
+    document.getElementById('navTabs').classList.remove('show');
+    document.getElementById('personSelectorWrap').style.display = 'none';
+  } else if (view === 'individual') {
+    cards.style.display = 'grid';
+    ranking.style.display = 'block';
+    sections.style.display = 'block';
+    document.getElementById('personSelectorWrap').style.display = 'inline-flex';
+    renderNav(person);
+    renderSections(person);
+  } else {
+    cards.style.display = 'grid';
+    ranking.style.display = 'block';
+    sections.style.display = 'block';
+    document.getElementById('navTabs').classList.remove('show');
+    document.getElementById('personSelectorWrap').style.display = 'none';
+    renderSections('all');
+  }
+}
+
+// ========== EVENT BINDING ==========
+document.getElementById('viewSelect').addEventListener('change', function(){
+  const v = this.value;
+  if (v === 'individual') applyView(v, personSelect.value);
+  else applyView(v, 'all');
+});
+personSelect.addEventListener('change', function(){
+  if (document.getElementById('viewSelect').value === 'individual') applyView('individual', this.value);
+});
+
+// ========== INIT ==========
+renderCards();
+renderRanking();
+applyView('all', 'all');
+</script>
+</body>
+</html>

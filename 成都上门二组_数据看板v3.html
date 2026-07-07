@@ -188,7 +188,7 @@ tbody tr:hover td:first-child{background:#f0f2ff}
 const RAW_DATA = typeof RAW !== 'undefined' ? RAW : [];
 const groupData = RAW_DATA.filter(function(d){return d['上门组']==='成都上门二组'});
 const groupNames = [...new Set(groupData.map(function(d){return d['员工姓名']}))].sort();
-const allDates = [...new Set(groupData.map(function(d){return d['数据日期']))].sort();
+const allDates = [...new Set(groupData.map(function(d){return d['数据日期']}))].sort();
 const latestDate = allDates.length > 0 ? allDates[allDates.length-1] : '';
 const startDate = allDates.length > 0 ? allDates[0] : '';
 

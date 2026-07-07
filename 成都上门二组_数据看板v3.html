@@ -605,10 +605,10 @@ function renderGroupOverview() {
   var h = '';
   
   // 核心指标卡片
-  h += '<div style="margin-bottom:24px"><div class="section-title" style="margin-bottom:12px">🏢 小组核心指标 <span style="font-size:13px;color:#999;font-weight:400">（成都上门二组期间KPI）</span></div>';
-  h += '<div class="core-grid">';
+  // 核心指标卡片 — 简洁卡片样式
+  h += '<div style="margin-bottom:20px"><div class="section-title" style="margin-bottom:12px">📊 成都上门二组指标总览 <span style="font-size:13px;color:#999;font-weight:400">（期间KPI）</span></div>';
+  h += '<div class="cq-grid">';
   
-  // Sort indicators by achievement rate (lowest first)
   var coreItems = INDICATORS.map(function(ind){
     var val = groupAvg(ind.field);
     var pct = calcAch(val, ind.target, ind.higher);
@@ -619,28 +619,13 @@ function renderGroupOverview() {
   }).sort(function(a,b){return (a.pct||999) - (b.pct||999);});
   
   coreItems.forEach(function(c, idx){
-    var cls = c.pct !== null && c.pct >= 100 ? 'core-good' : 'core-bad';
-    h += '<div class="core-card '+cls+'">';
-    h += '<div class="core-card-header">'+c.indicator+'</div>';
-    h += '<div class="core-card-body">';
-    h += '<div class="core-current">'+(c.value !== null ? c.displayValue : '-')+'</div>';
-    h += '<div class="core-pct-wrap"><span class="core-pct">'+(c.pct !== null ? fmtPct(c.pct) : '-')+'</span><span class="core-pct-label">达成率</span></div>';
-    h += '</div>';
-    h += '<div class="core-card-footer">目标：'+c.displayTarget+'</div>';
-    h += '</div>';
-  });
-  h += '</div></div>';
-
-  // 日常运营指标卡片
-  h += '<div style="margin-bottom:20px"><div class="section-title" style="margin-bottom:12px">📊 日常运营指标 <span style="font-size:13px;color:#999;font-weight:400">（达成率从低到高排序）</span></div><div class="cq-grid">';
-  coreItems.forEach(function(c, idx){
     var st = c.pct !== null && c.pct >= 100 ? 'ok' : (c.pct !== null && c.pct >= 96 ? 'warning' : 'danger');
     var vv = c.value !== null ? c.displayValue : '-';
-    h += '<div class="cq-card '+st+'" onclick="openCardDetail('+idx+')">';
-    h += '<div class="cq-card-header"><div><div class="cq-card-name">'+c.indicator+'</div><div class="cq-card-section">'+c.section+'</div></div><div style="text-align:right;font-size:12px"><span class="'+(c.pct!==null&&c.pct>=100?'pct-good':'pct-bad')+'" style="font-weight:700;font-size:16px">'+(c.pct!==null?fmtPct(c.pct):'-')+'</span><br><span style="color:#999">达成率</span></div></div>';
-    h += '<div class="cq-card-body"><span class="cq-card-value '+st+'">'+vv+'</span><div class="cq-card-meta">小组均值</div></div>';
-    h += '<div class="cq-card-target">目标：<span>'+c.displayTarget+'</span></div>';
-    h += '<div class="cq-card-hint">👆 点击查看人员明细 →</div>';
+    var barPct = c.pct !== null ? Math.min(c.pct, 100) : 0;
+    h += '<div class="cq-card '+st+'">';
+    h += '<div class="cq-card-header"><div class="cq-card-name">'+c.indicator+'</div><div class="cq-card-section">'+c.section+'</div></div>';
+    h += '<div class="cq-card-body"><span class="cq-card-value '+st+'">'+vv+'</span><div class="cq-card-meta">目标'+c.displayTarget+'</div></div>';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin:6px 0"><div class="progress-bar"><div class="progress-fill '+(st==='ok'?'progress-ok':(st==='warning'?'progress-warn':'progress-bad'))+'" style="width:'+barPct+'%"></div></div><span class="pct-num '+(st==='ok'?'pct-ok':(st==='warning'?'pct-warn':'pct-bad'))+'">'+(c.pct!==null?Math.round(c.pct)+'%':'-')+'</span></div>';
     h += '</div>';
   });
   h += '</div></div>';

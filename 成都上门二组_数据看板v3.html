@@ -265,7 +265,16 @@ var INDICATORS = [
   {section:'利润侧', name:'自营业绩达成率', field:'3C上门自营成交回收额', target:15000, higher:true,
    advice:'自营渠道加强转化，提升回收额'},
   {section:'利润侧', name:'门店业绩达成率', field:'3C上门自营成交回收额', target:15000, higher:true,
-   advice:'门店渠道积极开口，提升业绩达成'}
+   advice:'门店渠道积极开口，提升业绩达成'},
+  // ===== 多品类业务 =====
+  {section:'多品类业务', name:'成交额', field:'多品类上门成交订单金额', target:5000, higher:true,
+   advice:'提升多品类成交金额，拓展品类覆盖'},
+  {section:'多品类业务', name:'上门率', field:'多品类上门提交订单量', target:10, higher:true,
+   advice:'增加多品类提交订单量，提高用户触达'},
+  {section:'多品类业务', name:'跟进及时率', field:'多品类ETA履约准时率', target:0.95, higher:true,
+   advice:'多品类订单及时跟进，确保履约效率'},
+  {section:'多品类业务', name:'提交成交率', field:'多品类上门提交成交率-订单维度', target:0.60, higher:true,
+   advice:'提升多品类提交成交转化，优化报价策略'}
 ];
 
 // ========== SECTION GROUPING ==========
@@ -638,7 +647,7 @@ function renderGroupOverview() {
   });
   
   // 按板块分组显示，每个板块指标连续排列
-  var secOrder = ['3C业务','一站式换新业务','用户运营','质量业务','体验业务','利润侧'];
+  var secOrder = ['3C业务','一站式换新业务','用户运营','质量业务','体验业务','利润侧','多品类业务'];
   var sectionedItems = [];
   secOrder.forEach(function(s){
     coreItems.forEach(function(c){

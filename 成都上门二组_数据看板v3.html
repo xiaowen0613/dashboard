@@ -627,9 +627,24 @@ function renderGroupOverview() {
       displayValue: fmtVal(val, ind.field),
       displayTarget: (ind.higher?'≥':'≤')+(Math.abs(ind.target) < 3 && ind.target !== 0 ? (ind.target*100).toFixed(1)+'%' : ind.target.toFixed(2))
     };
-  }).sort(function(a,b){return (a.pct||999) - (b.pct||999);});
+  });
   
-  coreItems.forEach(function(c, idx){
+  // 按板块分组显示，每个板块指标连续排列
+  var secOrder = ['3C业务','一站式换新业务','用户运营','质量业务','体验业务','利润侧'];
+  var sectionedItems = [];
+  secOrder.forEach(function(s){
+    coreItems.forEach(function(c){
+      if(c.section === s) sectionedItems.push(c);
+    });
+  });
+  
+  // 按板块分组渲染卡片
+  var currentSec = '';
+  sectionedItems.forEach(function(c){
+    if(c.section !== currentSec){
+      currentSec = c.section;
+      h += '</div><div style="margin:10px 0 4px;font-size:13px;font-weight:600;color:#1a237e">📌 '+currentSec+'</div><div class="cq-grid">';
+    }
     var st = c.pct !== null && c.pct >= 100 ? 'ok' : (c.pct !== null && c.pct >= 96 ? 'warning' : 'danger');
     var vv = c.value !== null ? c.displayValue : '-';
     var barPct = c.pct !== null ? Math.min(c.pct, 100) : 0;

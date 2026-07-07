@@ -208,56 +208,64 @@ function parseVal(v) {
 
 // ========== INDICATOR DEFINITIONS (19 items) ==========
 var INDICATORS = [
-  // 3C业务
-  {section:'3C业务', name:'普通回收提交成交率', field:'3C上门提交成交率-用户维度(非一站换新)', target:0.78, higher:true,
+  // ===== 3C业务 =====
+  {section:'3C业务', name:'提交成交率', field:'3C上门提交成交率-用户维度(非一站换新)', target:0.78, higher:true,
    advice:'验机前先报价，差异订单标注"价格谈判"，运用竞争券/叠加券促成交'},
-  {section:'3C业务', name:'普通回收跟进及时率', field:'跟进及时率-全渠道', target:0.95, higher:true,
+  {section:'3C业务', name:'跟进及时率', field:'跟进及时率-全渠道', target:0.95, higher:true,
    advice:'时效订单及时跟进，未接通分时段持续跟进'},
-  {section:'3C业务', name:'普通回收上门率', field:'3C上门成交订单量', target:0, higher:true,
+  {section:'3C业务', name:'上门率', field:'3C成交人效', target:10, higher:true,
    advice:'提高上门订单量转化，合理规划路线'},
-  {section:'3C业务', name:'普通回收上门后成交率', field:'3C上门提交成交率-用户维度(非一站换新)', target:0.85, higher:true,
+  {section:'3C业务', name:'上门后成交率', field:'3C上门提交成交率-用户维度(非一站换新)', target:0.85, higher:true,
    advice:'验机后积极促成交易，有差价做协商议价'},
   {section:'3C业务', name:'加单率', field:'加单率', target:0.085, higher:true,
    advice:'有差价务必做协商议价挽留，多渠道开口'},
-  {section:'3C业务', name:'加单额', field:'加单金额', target:1500, higher:true,
-   advice:'提升加单转化，打包收+面对面加单+企微加单'},
   {section:'3C业务', name:'ETA准时率', field:'多品类ETA履约准时率', target:0.98, higher:true,
    advice:'点"到达"前将订单改派至当前时间段确保时间准确'},
-  // 一站式换新业务
-  {section:'一站式换新业务', name:'一站式换新取货及时率', field:'京东一站换新取货及时率', target:0.96, higher:true,
+  {section:'3C业务', name:'加单额', field:'加单金额', target:1500, higher:true,
+   advice:'提升加单转化，打包收+面对面加单+企微加单'},
+  // ===== 一站式换新业务 =====
+  {section:'一站式换新业务', name:'取货及时率', field:'京东一站换新取货及时率', target:0.96, higher:true,
    advice:'一传订单11点前取货，二传17点前取货'},
-  {section:'一站式换新业务', name:'一站式换新跟进及时率', field:'京东一站换新跟进及时率', target:0.98, higher:true,
+  {section:'一站式换新业务', name:'跟进及时率', field:'京东一站换新跟进及时率', target:0.98, higher:true,
    advice:'主品收货后1h内电话跟进告知到货并预约交付'},
-  {section:'一站式换新业务', name:'一站式换新履约及时率', field:'京东一站换新履约及时率', target:0.925, higher:true,
+  {section:'一站式换新业务', name:'履约及时率', field:'京东一站换新履约及时率', target:0.925, higher:true,
    advice:'一二传当日完成交付，三传最迟次日，优先交付'},
-  {section:'一站式换新业务', name:'一站式换新旧机成交率', field:'一站换新旧机收货成交率', target:0.88, higher:true,
+  {section:'一站式换新业务', name:'旧机成交率', field:'一站换新旧机收货成交率', target:0.88, higher:true,
    advice:'主动挽留用户完成旧机回收，价格敏感用户使用赚钱卡'},
-  // 用户运营
+  // ===== 用户运营 =====
   {section:'用户运营', name:'企微回复及时率', field:'企微回复及时率-直营', target:0.85, higher:true,
    advice:'开启企微消息提醒，工作时间10-22点及时回复'},
   {section:'用户运营', name:'交付添加率', field:'交付用户添加率', target:0.88, higher:true,
    advice:'结算前让顾客扫码添加企微，利用质检报告引导'},
   {section:'用户运营', name:'企微1V1回复及时率', field:'工单30min回复及时率', target:0.90, higher:true,
    advice:'工单30分钟内及时回复，设置提醒避免超时'},
-  // 质量业务
+  // ===== 质量业务 =====
   {section:'质量业务', name:'质检准确率', field:'质检准确率', target:0.95, higher:true,
    advice:'严格按照质检流程操作，上传清晰图片'},
   {section:'质量业务', name:'退货损失额率', field:'损失额率', target:0.01, higher:false,
    advice:'减少退货损失，验机时仔细检查避免差错'},
   {section:'质量业务', name:'隐私清除率', field:'隐私清除率', target:0.95, higher:true,
    advice:'上门服务后务必清除用户隐私数据，拍照留存'},
-  // 体验业务
+  // ===== 体验业务 =====
   {section:'体验业务', name:'催单率', field:'催单率-考核', target:0.02, higher:false,
    advice:'派单后尽快确认时间告知ETA，联系不上分时段跟进'},
   {section:'体验业务', name:'客诉率', field:'上门整体客诉率', target:0.02, higher:false,
    advice:'主动沟通避免用户不满，投诉第一时间响应'},
   {section:'体验业务', name:'工单回复及时率', field:'工单30min回复及时率', target:0.90, higher:true,
    advice:'工单30分钟内回复，设置提醒避免超时'},
-  // 利润侧
+  {section:'体验业务', name:'工单创建后电联率', field:'工单30min回复及时率', target:0.90, higher:true,
+   advice:'工单创建后及时电联用户，确认上门时间'},
+  // ===== 利润侧 =====
   {section:'利润侧', name:'入库及时率', field:'入库及时率', target:0.95, higher:true,
    advice:'平峰期订单当日完成入库，高峰期16点前完成'},
   {section:'利润侧', name:'成交人效', field:'3C成交人效', target:10, higher:true,
-   advice:'合理规划路线增加上门单量，提升成交效率'}
+   advice:'合理规划路线增加上门单量，提升成交效率'},
+  {section:'利润侧', name:'BD业绩达成率', field:'3C上门BD成交回收额', target:15000, higher:true,
+   advice:'BD渠道积极拓展，提升回收额'},
+  {section:'利润侧', name:'自营业绩达成率', field:'3C上门自营成交回收额', target:15000, higher:true,
+   advice:'自营渠道加强转化，提升回收额'},
+  {section:'利润侧', name:'门店业绩达成率', field:'3C上门自营成交回收额', target:15000, higher:true,
+   advice:'门店渠道积极开口，提升业绩达成'}
 ];
 
 // ========== SECTION GROUPING ==========

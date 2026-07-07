@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>成都上门二组 · 门店业绩达成看板</title>
+<script src="store_data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333;padding:20px}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:28px 32px;border-radius:16px;margin-bottom:20px}
+.header h1{font-size:24px;margin-bottom:4px}.header p{opacity:.7;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.card{background:#fff;border-radius:12px;padding:18px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card .n{font-size:28px;font-weight:700}.card .l{font-size:12px;color:#888;margin-top:4px}
+.blue .n{color:#3b82f6}.green .n{color:#22c55e}.red .n{color:#ef4444}.purple .n{color:#8b5cf6}.orange .n{color:#f59e0b}
+.filters{display:flex;gap:16px;margin-bottom:16px;align-items:end;flex-wrap:wrap}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:12px;color:#666;font-weight:600}
+.filter-group select,.filter-group input{padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;background:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}@media(max-width:768px){.row{grid-template-columns:1fr}}
+.panel{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.panel h3{font-size:15px;margin-bottom:12px;color:#0f172a}
+.chart{height:280px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f8fafc;padding:7px 8px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #e2e8f0;font-size:11px;cursor:pointer;white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+tr:hover td{background:#f8fafc}
+.tbl-wrap{max-height:420px;overflow-y:auto}
+</style>
+</head><body>
+
+<div class="header"><h1>🏪 成都上门二组 · 门店业绩达成看板</h1><p id="info"></p></div>
+<div class="grid" id="cards"></div>
+
+<div class="filters">
+  <div class="filter-group"><label>👤 员工</label><select id="empSelect" onchange="updateView()"><option value="__all__">全部员工</option></select></div>
+  <div class="filter-group"><label>📅 起</label><input type="date" id="dateFrom" onchange="updateView()"></div>
+  <div class="filter-group"><label>📅 止</label><input type="date" id="dateTo" onchange="updateView()"></div>
+</div>
+
+<div class="row">
+  <div class="panel"><h3>🏆 门店业绩排名 <span style="font-weight:400;font-size:11px;color:#888">目标¥1.5万</span></h3><div class="chart"><canvas id="c1"></canvas></div></div>
+  <div class="panel"><h3>📊 达成率进度</h3><div class="chart"><canvas id="c2"></canvas></div></div>
+</div>
+<div class="panel"><h3>📈 每日门店业绩趋势</h3><div class="chart" style="height:240px"><canvas id="c3"></canvas></div></div>
+<div class="panel" style="margin-top:16px">
+  <h3>📋 门店业绩明细</h3>
+  <div class="tbl-wrap"><table><thead><tr><th onclick="sortTable(0)">员工</th><th onclick="sortTable(1)">工号</th><th onclick="sortTable(2)">订单数</th><th onclick="sortTable(3)">业绩量</th><th onclick="sortTable(4)">成交金额</th><th onclick="sortTable(5)">达成率</th><th onclick="sortTable(6)">还差金额</th><th onclick="sortTable(7)">状态</th></tr></thead><tbody id="tbl"></tbody></table></div>
+</div>
+
+<script>
+document.getElementById("info").textContent = "数据期间：" + START + " ~ " + END + " · 口径：订单成交渠道=门店 · 目标：¥15,000/人";
+
+document.getElementById("dateFrom").value = DATES[0];
+document.getElementById("dateTo").value = DATES[DATES.length - 1];
+
+BYEMP.forEach(function(x){
+  var o = document.createElement("option");
+  o.value = x.n;
+  o.textContent = x.n + "(" + x.i + ")";
+  document.getElementById("empSelect").appendChild(o);
+});
+
+document.getElementById("cards").innerHTML = [
+  {n:TOTAL_ORDERS, l:"门店订单数", c:"blue"},
+  {n:TOTAL_EMP, l:"有业绩员工", c:"purple"},
+  {n:DONE_CNT, l:"达标人数", c:"green"},
+  {n:TOTAL_EMP - DONE_CNT, l:"未达标人数", c:"red"},
+  {n:"¥" + TOTAL_AMT.toLocaleString(), l:"总成交金额", c:"blue"},
+  {n:AVG_PCT + "%", l:"平均达成率", c:"orange"}
+].map(function(c){return '<div class="card ' + c.c + '"><div class="n">' + c.n + '</div><div class="l">' + c.l + '</div></div>';}).join("");
+
+function filteredData(){
+  var s = document.getElementById("empSelect").value;
+  var r = (s === "__all__") ? BYEMP.slice() : BYEMP.filter(function(x){return x.n === s;});
+  return r;
+}
+
+var c1 = null, c2 = null, c3 = null, sortCol = -1, sortAsc = true;
+
+function updateView(){
+  if (c1){c1.destroy();c1=null;}
+  if (c2){c2.destroy();c2=null;}
+  if (c3){c3.destroy();c3=null;}
+  
+  var items = filteredData();
+  var sorted = items.slice().sort(function(a,b){return a.a - b.a;});
+  
+  c1 = new Chart(document.getElementById("c1"), {
+    type:"bar", data:{labels:sorted.map(function(x){return x.n;}), datasets:[{label:"成交金额", data:sorted.map(function(x){return x.a;}),
+      backgroundColor:sorted.map(function(x){return x.a >= 15000 ? "#22c55e80" : "#3b82f680";}),
+      borderColor:sorted.map(function(x){return x.a >= 15000 ? "#22c55e" : "#3b82f6";}), borderWidth:2, borderRadius:4}]},
+    options:{responsive:true, maintainAspectRatio:false, indexAxis:"y",
+      plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true, grid:{color:"#f1f5f9"}}, y:{grid:{display:false}}}}
+  });
+  
+  c2 = new Chart(document.getElementById("c2"), {
+    type:"bar", data:{labels:sorted.map(function(x){return x.n;}), datasets:[{label:"达成率%", data:sorted.map(function(x){return x.p;}),
+      backgroundColor:sorted.map(function(x){return x.p >= 100 ? "#22c55e80" : "#f59e0b80";}),
+      borderColor:sorted.map(function(x){return x.p >= 100 ? "#22c55e" : "#f59e0b";}), borderWidth:2, borderRadius:4}]},
+    options:{responsive:true, maintainAspectRatio:false, indexAxis:"y",
+      plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true, max:110, grid:{color:"#f1f5f9"}}, y:{grid:{display:false}}}}
+  });
+  
+  var sel = document.getElementById("empSelect").value;
+  if (sel === "__all__"){
+    var aggr = {};
+    DAILY.forEach(function(x){if(!aggr[x.d])aggr[x.d]=0;aggr[x.d]+=x.a;});
+    var dates = Object.keys(aggr).sort();
+    var vals = dates.map(function(d){return aggr[d];});
+    c3 = new Chart(document.getElementById("c3"), {
+      type:"line", data:{labels:dates, datasets:[{label:"全员每日门店业绩", data:vals, borderColor:"#3b82f6", backgroundColor:"#3b82f620", fill:true, tension:0.3, pointRadius:3}]},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:"top",labels:{boxWidth:12,font:{size:11}}}},
+        scales:{y:{beginAtZero:true, grid:{color:"#f1f5f9"}}, x:{grid:{display:false}}}}
+    });
+  } else {
+    var empDaily = DAILY.filter(function(x){return x.n === sel;});
+    var dMap = {};
+    empDaily.forEach(function(x){dMap[x.d] = (dMap[x.d]||0) + x.a;});
+    var dates = Object.keys(dMap).sort();
+    var vals = dates.map(function(d){return dMap[d];});
+    c3 = new Chart(document.getElementById("c3"), {
+      type:"line", data:{labels:dates, datasets:[{label:sel + " 每日门店业绩", data:vals, borderColor:"#22c55e", backgroundColor:"#22c55e20", fill:true, tension:0.3, pointRadius:5, pointBackgroundColor:"#22c55e"}]},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:"top",labels:{boxWidth:12,font:{size:11}}}},
+        scales:{y:{beginAtZero:true, grid:{color:"#f1f5f9"}}, x:{grid:{display:false}}}}
+    });
+  }
+  
+  var sortedItems = items.slice().sort(function(a,b){return b.a - a.a;});
+  document.getElementById("tbl").innerHTML = sortedItems.map(function(x){
+    var st = x.a >= 15000 ? "\u2705" : "\u26A0\uFE0F";
+    return "<tr><td><b>" + x.n + "</b></td><td style='color:#888;font-size:11px'>" + x.i + "</td><td>" + x.oc + "</td><td>" + x.q + "</td><td>\u00A5" + x.a.toLocaleString() + "</td><td>" + x.p + "%</td><td>" + (x.s > 0 ? "\u00A5" + x.s.toLocaleString() : "-") + "</td><td>" + st + "</td></tr>";
+  }).join("");
+}
+
+function sortTable(col){
+  if (sortCol === col){sortAsc = !sortAsc;}else{sortCol = col;sortAsc = true;}
+  var keys = ["n","i","oc","q","a","p","s"];
+  var key = keys[col];
+  var items = filteredData();
+  items.sort(function(a,b){
+    var va = a[key], vb = b[key];
+    if (typeof va === "string") return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return sortAsc ? va - vb : vb - va;
+  });
+  document.getElementById("tbl").innerHTML = items.map(function(x){
+    var st = x.a >= 15000 ? "\u2705" : "\u26A0\uFE0F";
+    return "<tr><td><b>" + x.n + "</b></td><td style='color:#888;font-size:11px'>" + x.i + "</td><td>" + x.oc + "</td><td>" + x.q + "</td><td>\u00A5" + x.a.toLocaleString() + "</td><td>" + x.p + "%</td><td>" + (x.s > 0 ? "\u00A5" + x.s.toLocaleString() : "-") + "</td><td>" + st + "</td></tr>";
+  }).join("");
+}
+
+updateView();
+</script>
+</body></html>

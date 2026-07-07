@@ -1,0 +1,238 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>成都上门二组 · 核心数据概览</title>
+<script src="core_data.js"></script>
+<style>
+body{font-family:"Microsoft YaHei",sans-serif;background:#f0f2f5;padding:16px;margin:0;color:#000}
+*{box-sizing:border-box}
+.hd{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:20px 24px;border-radius:12px;margin-bottom:14px}
+.hd h1{font-size:20px;margin-bottom:4px}
+.hd p{font-size:12px;opacity:.7;margin:0}
+.fl{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:end}
+.fl label{font-size:11px;color:#64748b;display:block;margin-bottom:2px}
+.fl select,.fl input{padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff}
+.pn{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:12px}
+.pn h3{font-size:13px;color:#0f172a;margin:0 0 8px;display:flex;align-items:center;gap:5px}
+.gr{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:6px;margin-bottom:6px}
+.cd{background:#fff;border-radius:10px;padding:10px 12px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04);position:relative;overflow:hidden}
+.cd::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:#facc15;border-radius:10px 0 0 10px}
+.cd .n{font-size:10px;color:#000;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd .v{font-size:16px;font-weight:700;color:#000}
+.cd.r::before{background:#facc15}.cd.g::before{background:#facc15}.cd.o::before{background:#facc15}
+.gh{font-size:12px;font-weight:600;color:#475569;padding:4px 8px;background:#f1f5f9;border-radius:6px;margin:8px 0 4px}
+.tb{overflow:auto;max-height:450px;border:1px solid #e2e8f0;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#f8fafc;padding:4px 5px;text-align:left;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;font-size:10px;cursor:pointer;position:sticky;top:0;z-index:2;white-space:nowrap}
+td{padding:3px 5px;border-bottom:1px solid #f1f5f9;font-size:11px;white-space:nowrap}
+tr:hover td{background:#f8fafc}
+.p{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:800px){.p{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hd">
+<h1>📊 成都上门二组 · 核心数据概览</h1>
+<p id="info"></p>
+</div>
+
+<div class="fl">
+<div style="position:relative"><label>👤 员工</label><br>
+<input id="esSearch" placeholder="输入员工姓名搜索..." autocomplete="off" style="width:170px;padding:7px 10px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;transition:border .2s" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+<div id="esDropdown" style="display:none;position:absolute;top:100%;left:0;width:170px;max-height:220px;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;margin-top:2px"></div>
+<select id="es" style="display:none"></select></div>
+<div><label>📅 起</label><input type="date" id="ds"></div>
+<div><label>📅 止</label><input type="date" id="de"></div>
+</div>
+
+<div id="dataArea"></div>
+
+<div class="pn"><h3>📋 全量明细 · 49列</h3>
+<div class="tb"><table><thead><tr id="thr"></tr></thead><tbody id="tbd"></tbody></table></div></div>
+
+<script>
+document.getElementById("info").textContent = SD+" ~ "+ED+" · "+EC+"名员工 · "+RC+"条记录 · "+COLS.length+"项指标";
+
+// 填充日期
+document.getElementById("ds").value=SD;
+document.getElementById("de").value=ED;
+
+// 员工搜索 + 下拉面板
+var allNames=NAMES.slice();
+var selectedEmp="";
+function filterEmp(){
+  var q=document.getElementById("esSearch").value;
+  var dd=document.getElementById("esDropdown");
+  var filtered=q?allNames.filter(function(n){return n.indexOf(q)>=0;}):allNames;
+  if(filtered.length>0 && (q||selectedEmp)){
+    dd.style.display="block";
+    dd.innerHTML=filtered.slice(0,50).map(function(n){
+      return '<div style="padding:6px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'\'" onclick="pickEmp(\''+n+'\')">'+n+'</div>';
+    }).join("");
+  } else {
+    dd.style.display="none";
+  }
+}
+function pickEmp(n){
+  selectedEmp=n;
+  document.getElementById("esSearch").value=n;
+  document.getElementById("esDropdown").style.display="none";
+  refresh();
+}
+// 点击外部关闭下拉
+document.addEventListener("click",function(e){
+  var dd=document.getElementById("esDropdown");
+  if(dd && !e.target.closest('#esSearch') && !e.target.closest('#esDropdown')){
+    dd.style.display="none";
+  }
+});
+
+// 表头
+document.getElementById("thr").innerHTML=COLS.map(function(c){
+  return "<th onclick='sortBy(\""+c+"\")'>"+c+"</th>";
+}).join("");
+
+function pv(v){return v===null||v===undefined||v===""?"-":String(v);}
+function nv(v){if(v===null||v===undefined)return null;var n=parseFloat(v);return isNaN(n)?null:n;}
+
+function getRows(){
+  var s=document.getElementById("esSearch").value;
+  var f=document.getElementById("ds").value;
+  var t=document.getElementById("de").value;
+  var r=s?RAW.filter(function(x){return x["员工姓名"]===s;}):RAW.slice();
+  return r.filter(function(x){return x["数据日期"]>=f&&x["数据日期"]<=t;});
+}
+
+function avg(rows,metric){
+  var vals=rows.map(function(r){return nv(r[metric]);}).filter(function(v){return v!==null;});
+  if(vals.length===0)return null;
+  return vals.reduce(function(a,b){return a+b;},0)/vals.length;
+}
+
+function isPct(m){return m.indexOf("率")>=0||m.indexOf("分")>=0||m.indexOf("及时")>=0||m.indexOf("占比")>=0;}
+
+function refresh(){
+  var rows=getRows();
+  if(rows.length===0){
+    document.getElementById("dataArea").innerHTML='<div style="padding:20px;color:#888">暂无数据</div>';
+    document.getElementById("tbd").innerHTML="";
+    return;
+  }
+  
+  var s=document.getElementById("esSearch").value;
+  var html="";
+  
+  // 分组指标
+  var groups=[
+    {name:"3C业务",metrics:["3C成交人效","3C上门提交订单量","3C上门成交订单量","3C上门自营成交回收额","3C上门BD成交回收额","3C上门提交成交率-用户维度(非一站换新)","3C上门议价金额"]},
+    {name:"加单相关",metrics:["加单率","加单金额","多品类加单率","多品类加单额","多品类成交人效","多品类上门提交订单量"]},
+    {name:"一站式换新",metrics:["京东一站换新履约及时率","京东一站换新取货及时率","京东一站换新跟进及时率","一站换新旧机收货成交率"]},
+    {name:"履约效率",metrics:["3C直营非一站换新ETA履约准时率","多品类ETA履约准时率"]},
+    {name:"服务质量",metrics:["企微回复及时率-直营","跟进及时率-全渠道","交付用户添加率","员工服务分-直营","工单30min回复及时率"]},
+    {name:"客诉质量",metrics:["上门整体客诉率","上门超时客诉率","上门投诉人员客诉率","催单率-考核"]},
+    {name:"利润",metrics:["质检准确率","损失额率","入库及时率","隐私清除率","超时未入库量","盘亏订单量","议价费率","异常议价订单量","竞争追价费率"]}
+  ];
+  
+  groups.forEach(function(g){
+    html+='<div class="gh">'+g.name+'</div><div class="gr">';
+    g.metrics.forEach(function(m){
+      var a=avg(rows,m);
+      if(a===null){html+='<div class="cd"><div class="n">'+m+'</div><div class="v">-</div></div>';return;}
+      var d=isPct(m)?a.toFixed(1)+"%":(a>10?a.toFixed(1):a.toFixed(2));
+      var c="";
+      if(isPct(m)&&a<100&&a>0)c="r";
+      else if(isPct(m)&&(a===0||a>=100))c="g";
+      html+='<div class="cd '+c+'"><div class="n">'+m+'</div><div class="v">'+d+'</div></div>';
+    });
+    html+='</div>';
+  });
+  
+  // 全部指标列（排除基本信息）
+  function metricCols(){
+    var skip=["数据日期","日期类型","城市","上门组","区域经理","员工姓名","员工工号","岗位名称"];
+    return COLS.filter(function(c){return skip.indexOf(c)<0;});
+  }
+  var mCols=metricCols();
+  
+  // 排行榜（指定维度）
+  if(!s){
+    var rankMetrics=["3C成交人效","3C上门自营成交回收额","3C上门BD成交回收额","3C上门议价金额","议价费率","加单率","加单金额","质检准确率","企微回复及时率-直营"];
+    html+='<div class="gh">🏆 员工指标排行榜 TOP10</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
+    rankMetrics.forEach(function(m){
+      var empAvg={};
+      rows.forEach(function(r){
+        var n=r["员工姓名"];var v=nv(r[m]);if(v===null)return;
+        if(!empAvg[n])empAvg[n]={sum:0,count:0};
+        empAvg[n].sum+=v;empAvg[n].count++;
+      });
+      var sorted=Object.keys(empAvg).map(function(n){return{name:n,avg:empAvg[n].sum/empAvg[n].count};}).filter(function(e){return e.avg!==null;}).sort(function(a,b){return b.avg-a.avg;}).slice(0,10);
+      if(sorted.length===0)return;
+      html+='<div class="cd" style="border-left-color:#f59e0b"><div class="n" style="font-weight:600;font-size:11px;margin-bottom:4px;color:#000">'+m+'</div>';
+      sorted.forEach(function(e,i){
+        var icon=i<3?['🥇','🥈','🥉'][i]:' '+(i+1)+'.';
+        html+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:1px 0">'+
+          '<span>'+icon+' '+e.name+'</span>'+
+          '<span style="font-weight:600">'+(isPct(m)?e.avg.toFixed(1)+'%':(e.avg>10?e.avg.toFixed(1):e.avg.toFixed(2)))+'</span></div>';
+      });
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+  
+  // 日趋势（全部模式=团队汇总，员工模式=个人数据）含完整指标
+  var title=s?s+" 日趋势":"团队日趋势";
+  html+='<div class="gh">📈 '+title+'（'+mCols.length+'项指标）</div>';
+  html+='<div class="tb" style="max-height:350px"><table><thead><tr>';
+  html+='<th>日期</th>'+(s?'':'<th>人数</th>')+mCols.map(function(m){return'<th>'+m+'</th>';}).join('')+'</tr></thead><tbody>';
+  if(s){
+    rows.sort(function(a,b){return a["数据日期"]>b["数据日期"]?1:-1;});
+    rows.forEach(function(r){
+      var row='<tr><td>'+r["数据日期"]+'</td>';
+      mCols.forEach(function(m){
+        var v=nv(r[m]);row+='<td>'+(v!==null?(isPct(m)?v.toFixed(1)+'%':(v>10?v.toFixed(1):v.toFixed(2))):'-')+'</td>';
+      });
+      html+=row+'</tr>';
+    });
+  } else {
+    var byDate={};
+    rows.forEach(function(r){
+      var d=r["数据日期"];if(!byDate[d])byDate[d]={rows:[]};byDate[d].rows.push(r);
+    });
+    var dates=Object.keys(byDate).sort();
+    dates.forEach(function(d){
+      var rs=byDate[d].rows;
+      var row='<tr><td>'+d+'</td><td>'+rs.length+'</td>';
+      mCols.forEach(function(m){
+        var v=rs.map(function(x){return nv(x[m]);}).filter(function(x){return x!==null;});
+        var avg=v.length?v.reduce(function(a,b){return a+b;},0)/v.length:null;
+        row+='<td>'+(avg!==null?(isPct(m)?avg.toFixed(1)+'%':(avg>10?avg.toFixed(1):avg.toFixed(2))):'-')+'</td>';
+      });
+      html+=row+'</tr>';
+    });
+  }
+  html+='</tbody></table></div>';
+  
+  document.getElementById("dataArea").innerHTML=html;
+  document.getElementById("tbd").innerHTML=rows.map(function(r){
+    return "<tr>"+COLS.map(function(c){return "<td>"+pv(r[c])+"</td>";}).join("")+"</tr>";
+  }).join("");
+}
+
+function sortBy(k){
+  var rows=getRows();
+  rows.sort(function(a,b){
+    var va=a[k],vb=b[k];
+    var na=nv(va),nb=nv(vb);
+    if(na!==null&&nb!==null)return na-nb;
+    return((va||"")>(vb||"")?1:-1);
+  });
+  document.getElementById("tbd").innerHTML=rows.map(function(r){
+    return "<tr>"+COLS.map(function(c){return "<td>"+pv(r[c])+"</td>";}).join("")+"</tr>";
+  }).join("");
+}
+
+document.getElementById("esSearch").oninput=function(){filterEmp();if(!this.value&&!selectedEmp)refresh();else if(!this.value){selectedEmp="";refresh();}};
+document.getElementById("ds").onchange=refresh;
+document.getElementById("de").onchange=refresh;
+refresh();
+</script>
+</body></html>

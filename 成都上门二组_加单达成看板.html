@@ -1,0 +1,178 @@
+﻿<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>成都上门二组 · 加单达成看板</title>
+<script src="jiadan_data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333;padding:20px}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:24px;border-radius:12px;margin-bottom:16px}
+.header h1{font-size:22px;margin-bottom:4px}.header p{opacity:.7;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:14px}
+.card{background:#fff;border-radius:10px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card .n{font-size:24px;font-weight:700}.card .l{font-size:11px;color:#888;margin-top:2px}.blue .n{color:#3b82f6}.green .n{color:#22c55e}.red .n{color:#ef4444}.purple .n{color:#8b5cf6}.orange .n{color:#f59e0b}
+.fl{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:end}
+.fl label{font-size:11px;color:#666;display:block}
+.fl select,.fl input{padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff}
+.pn{background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:12px}
+.pn h3{font-size:14px;margin-bottom:8px;color:#0f172a}
+.ch{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}@media(max-width:800px){.ch{grid-template-columns:1fr}}
+.ch .pn{padding:10px}
+canvas{height:260px!important}
+.tw{overflow:auto;max-height:450px;border:1px solid #e2e8f0;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#f8fafc;padding:5px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #e2e8f0;font-size:10px;cursor:pointer;position:sticky;top:0;z-index:2;white-space:nowrap}
+td{padding:4px 5px;border-bottom:1px solid #f1f5f9;font-size:11px;white-space:nowrap}
+tr:hover td{background:#f8fafc}
+.bar-bg{background:#e2e8f0;border-radius:8px;height:14px;width:60px;overflow:hidden;display:inline-block;vertical-align:middle}
+.bar-fill{height:100%;border-radius:8px;transition:width .5s}
+</style>
+</head><body>
+
+<div class="header"><h1>📊 成都上门二组 · 加单达成看板</h1><p id="info"></p></div>
+<div class="grid" id="cards"></div>
+
+<div class="fl">
+  <div><label>👤 员工</label><select id="es" onchange="rf()"><option value="__all__">全部员工</option></select></div>
+  <div><label>📅 起</label><input type="date" id="ds" onchange="rf()"></div>
+  <div><label>📅 止</label><input type="date" id="de" onchange="rf()"></div>
+</div>
+
+<div class="ch">
+  <div class="pn"><h3>📊 加单率排名 <span style="font-weight:400;font-size:10px;color:#888">目标≥8.5%</span></h3><canvas id="c1"></canvas></div>
+  <div class="pn"><h3>💰 加单金额排名</h3><canvas id="c2"></canvas></div>
+</div>
+<div class="pn"><h3>📈 每日加单趋势</h3><canvas id="c3" style="height:220px!important"></canvas></div>
+<div class="pn"><h3>📋 员工加单明细 <span style="font-weight:400;font-size:10px;color:#888">点击表头排序</span></h3>
+<div class="tw"><table><thead><tr><th onclick="st(0)">员工</th><th onclick="st(1)">工号</th><th onclick="st(2)">首单量</th><th onclick="st(3)">加单量</th><th onclick="st(4)">加单金额</th><th onclick="st(5)">成交用户</th><th onclick="st(6)">加单用户</th><th onclick="st(7)">加单率</th><th onclick="st(8)">状态</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+
+<script>
+document.getElementById("info").textContent = START + " ~ " + END + " · " + TOTAL_EMP + "名员工 · 团队加单率" + TEAM_RATE + "% · 目标≥8.5%";
+
+document.getElementById("cards").innerHTML = [
+  {n:TOTAL_EMP, l:"有数据员工", c:"blue"}, {n:TEAM_RATE+"%", l:"团队加单率", c:TEAM_RATE>=8.5?"green":"red"},
+  {n:"¥" + TOTAL_AA.toLocaleString(), l:"加单总金额", c:"orange"}, {n:TOTAL_F, l:"总首单量", c:"purple"},
+  {n:TOTAL_AU + "/" + TOTAL_DU, l:"加单用户/成交用户", c:"green"}
+].map(function(x){return '<div class="card '+x.c+'"><div class="n">'+x.n+'</div><div class="l">'+x.l+'</div></div>';}).join("");
+
+document.getElementById("ds").value = START;
+document.getElementById("de").value = END;
+
+RAW.forEach(function(x){
+  var o = document.createElement("option"); o.value = x.n; o.textContent = x.n + "(" + x.i + ")";
+  document.getElementById("es").appendChild(o);
+});
+
+function pv(v){return v===null||v===undefined?"-":v;}
+
+function getSel(){
+  return document.getElementById("es").value;
+}
+
+function getRows(){
+  var s = getSel();
+  var f = document.getElementById("ds").value;
+  var t = document.getElementById("de").value;
+  if (s === "__all__") return RAW;
+  return RAW.filter(function(x){return x.n === s;});
+}
+
+var c1=null,c2=null,c3=null,sc=-1,sa=true;
+
+function rf(){
+  if(c1){c1.destroy();c1=null;}if(c2){c2.destroy();c2=null;}if(c3){c3.destroy();c3=null;}
+  
+  var rows = getRows();
+  var sel = getSel();
+  
+  // 加单率排名
+  var sorted = rows.slice().sort(function(a,b){return a.r - b.r;});
+  c1 = new Chart(document.getElementById("c1"), {
+    type:"bar", data:{labels:sorted.map(function(x){return x.n;}), datasets:[{
+      label:"加单率%", data:sorted.map(function(x){return x.r;}),
+      backgroundColor:sorted.map(function(x){return x.r >= 8.5 ? "#22c55e80" : "#ef444480";}),
+      borderColor:sorted.map(function(x){return x.r >= 8.5 ? "#22c55e" : "#ef4444";}), borderWidth:2, borderRadius:4
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.raw+"%";}}}},
+      scales:{x:{beginAtZero:true,grid:{color:"#f1f5f9"}},y:{grid:{display:false}}}}
+  });
+  
+  // 加单金额排名
+  var sorted2 = rows.slice().sort(function(a,b){return a.aa - b.aa;});
+  c2 = new Chart(document.getElementById("c2"), {
+    type:"bar", data:{labels:sorted2.map(function(x){return x.n;}), datasets:[{
+      label:"加单金额", data:sorted2.map(function(x){return x.aa;}),
+      backgroundColor:"#3b82f680", borderColor:"#3b82f6", borderWidth:2, borderRadius:4
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return "¥"+ctx.raw.toLocaleString();}}}},
+      scales:{x:{beginAtZero:true,grid:{color:"#f1f5f9"}},y:{grid:{display:false}}}}
+  });
+  
+  // 每日趋势
+  if (sel === "__all__") {
+    var byDate = {};
+    EMP_DAILY.forEach(function(x){
+      var d=x.d;if(d<document.getElementById("ds").value||d>document.getElementById("de").value)return;
+      if(!byDate[d])byDate[d]={rateSum:0,amtSum:0,empCount:0};
+      byDate[d].rateSum += x.r;
+      byDate[d].amtSum += x.a;
+      byDate[d].empCount++;
+    });
+    var dates = Object.keys(byDate).sort();
+    c3 = new Chart(document.getElementById("c3"), {
+      type:"line", data:{labels:dates, datasets:[
+        {label:"团队加单率%", data:dates.map(function(d){var b=byDate[d];return b.empCount>0?Math.round(b.rateSum/b.empCount*10)/10:0;}), borderColor:"#22c55e", backgroundColor:"#22c55e20", fill:true, tension:0.3, yAxisID:"y"},
+        {label:"加单金额", data:dates.map(function(d){return byDate[d].amtSum;}), borderColor:"#3b82f6", backgroundColor:"#3b82f620", fill:true, tension:0.3, yAxisID:"y1"}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:"top",labels:{boxWidth:12,font:{size:11}}}},
+        scales:{y:{beginAtZero:true,grid:{color:"#f1f5f9"},position:"left",title:{display:true,text:"%"}},
+                y1:{beginAtZero:true,position:"right",grid:{display:false},title:{display:true,text:"¥"}},
+                x:{grid:{display:false}}}}
+    });
+  } else {
+    var empD = EMP_DAILY.filter(function(x){return x.n === sel;});
+    var dMap = {}; empD.forEach(function(x){dMap[x.d] = {r:x.r, a:x.a};});
+    var dates = Object.keys(dMap).sort().filter(function(d){return d>=document.getElementById("ds").value&&d<=document.getElementById("de").value;});
+    c3 = new Chart(document.getElementById("c3"), {
+      type:"line", data:{labels:dates, datasets:[
+        {label:sel+" 加单率%", data:dates.map(function(d){return dMap[d].r;}), borderColor:"#22c55e", backgroundColor:"#22c55e20", fill:true, tension:0.3, pointRadius:5, pointBackgroundColor:"#22c55e", yAxisID:"y"},
+        {label:sel+" 加单金额", data:dates.map(function(d){return dMap[d].a;}), borderColor:"#3b82f6", backgroundColor:"#3b82f620", fill:true, tension:0.3, pointRadius:5, pointBackgroundColor:"#3b82f6", yAxisID:"y1"}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:"top",labels:{boxWidth:12,font:{size:11}}}},
+        scales:{y:{beginAtZero:true,grid:{color:"#f1f5f9"},position:"left",title:{display:true,text:"%"}},
+                y1:{beginAtZero:true,position:"right",grid:{display:false},title:{display:true,text:"¥"}},
+                x:{grid:{display:false}}}}
+    });
+  }
+  
+  // 明细表
+  var sortedItems = rows.slice().sort(function(a,b){return b.r - a.r;});
+  document.getElementById("tb").innerHTML = sortedItems.map(function(x){
+    var st = x.r >= 8.5 ? "✅" : "⚠️";
+    var barColor = x.r >= 8.5 ? "#22c55e" : (x.r > 0 ? "#f59e0b" : "#ef4444");
+    return "<tr><td><b>"+x.n+"</b></td><td style='color:#888'>"+x.i+"</td><td>"+x.f+"</td><td>"+x.aq+"</td><td>¥"+x.aa.toLocaleString()+"</td><td>"+x.du+"</td><td>"+x.au+"</td><td><div class='bar-bg'><div class='bar-fill' style='width:"+Math.min(x.r,100)+"%;background:"+barColor+"'></div></div> "+x.r+"%</td><td>"+st+"</td></tr>";
+  }).join("");
+}
+
+function st(col){
+  if(sc===col){sa=!sa}else{sc=col;sa=true;}
+  var keys = ["n","i","f","aq","aa","du","au","r"];
+  var key = keys[col];
+  var rows = getRows();
+  rows.sort(function(a,b){
+    var va=a[key],vb=b[key];
+    if(typeof va==="string")return sa?va.localeCompare(vb):vb.localeCompare(va);
+    return sa?va-vb:vb-va;
+  });
+  document.getElementById("tb").innerHTML = rows.map(function(x){
+    var st = x.r >= 8.5 ? "✅" : "⚠️";
+    var barColor = x.r >= 8.5 ? "#22c55e" : (x.r > 0 ? "#f59e0b" : "#ef4444");
+    return "<tr><td><b>"+x.n+"</b></td><td style='color:#888'>"+x.i+"</td><td>"+x.f+"</td><td>"+x.aq+"</td><td>¥"+x.aa.toLocaleString()+"</td><td>"+x.du+"</td><td>"+x.au+"</td><td><div class='bar-bg'><div class='bar-fill' style='width:"+Math.min(x.r,100)+"%;background:"+barColor+"'></div></div> "+x.r+"%</td><td>"+st+"</td></tr>";
+  }).join("");
+}
+
+rf();
+</script>
+</body></html>

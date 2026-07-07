@@ -660,7 +660,7 @@ function renderGroupOverview() {
   sectionedItems.forEach(function(c){
     if(c.section !== currentSec){
       currentSec = c.section;
-      h += '</div><div style="margin:10px 0 4px;font-size:13px;font-weight:600;color:#1a237e">📌 '+currentSec+'</div><div class="cq-grid">';
+      h += '</div><div style="margin:12px 0 6px;font-size:14px;font-weight:700;color:#1a237e;padding:4px 0">📌 '+currentSec+'</div><div class="cq-grid">';
     }
     var st = c.pct !== null && c.pct >= 100 ? 'ok' : (c.pct !== null && c.pct >= 96 ? 'warning' : 'danger');
     var vv = c.value !== null ? c.displayValue : '-';
@@ -812,8 +812,8 @@ function render() {
 // ========== INIT ==========
 var sel = document.getElementById('personSelect');
 sel.innerHTML = '';
-var allOpt = document.createElement('option'); allOpt.value = ''; allOpt.textContent = '📋 全部（按板块查看）'; allOpt.selected = true; sel.appendChild(allOpt);
-var groupOpt = document.createElement('option'); groupOpt.value = '__GROUP__'; groupOpt.textContent = '🏙️ 成都上门二组（指标总览）'; sel.appendChild(groupOpt);
+var groupOpt = document.createElement('option'); groupOpt.value = '__GROUP__'; groupOpt.textContent = '🏙️ 成都上门二组（指标总览）'; groupOpt.selected = true; sel.appendChild(groupOpt);
+var allOpt = document.createElement('option'); allOpt.value = ''; allOpt.textContent = '📋 全部（按板块查看）'; sel.appendChild(allOpt);
 groupNames.forEach(function(n){
   var o = document.createElement('option');
   o.value = n; o.textContent = n; sel.appendChild(o);

@@ -4392,6 +4392,9 @@ function renderIssueSummary() {
 
 // ===== init =====
 function init() {
+  // Render business overview first - has its own data
+  renderBusiness();
+  
   applyTheme();
   loadConfig();
   loadFilterState();
@@ -4400,9 +4403,6 @@ function init() {
   populateFilterUI();
   populateTrendIndicators();
   document.getElementById('trend-btn-line').style.background = 'var(--accent)';
-  
-  // Render business overview if default tab
-  renderBusiness();
 
   // Restore from IndexedDB
   IDB.restoreData().then(restored => {

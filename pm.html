@@ -4391,7 +4391,48 @@ function renderIssueSummary() {
 }
 
 // ===== init =====
+// ===== 内置模拟数据 =====
+function seedMockData() {
+  // Only seed if no data exists
+  try {
+    var roster = JSON.parse(localStorage.getItem('personnel_roster') || '[]');
+    if (roster.length > 0) return;
+  } catch(e) {}
+  
+  var employees = [
+    {name:'贺志斌',id:'143310',region:'肖稳'},{name:'邵豪',id:'129172',region:'肖稳'},
+    {name:'高志强',id:'142343',region:'肖稳'},{name:'陶冯奇',id:'111769',region:'肖稳'},
+    {name:'金耀泽',id:'151259',region:'肖稳'},{name:'江子威',id:'129827',region:'肖稳'},
+    {name:'彭文宇',id:'147348',region:'肖稳'},{name:'张飘见',id:'144565',region:'肖稳'},
+    {name:'张进孝',id:'111044',region:'肖稳'},{name:'张津羚',id:'143604',region:'肖稳'},
+    {name:'张杰',id:'145791',region:'肖稳'},{name:'张杨',id:'154486',region:'肖稳'},
+    {name:'张围棋',id:'003278',region:'肖稳'},{name:'喻定强',id:'121689',region:'肖稳'},
+    {name:'唐明进',id:'124079',region:'肖稳'},{name:'刘成清',id:'154875',region:'肖稳'},
+    {name:'刘其乐',id:'120152',region:'肖稳'},{name:'凌永亮',id:'154443',region:'肖稳'},
+    {name:'黄润',id:'148489',region:'肖稳'},{name:'魏弘',id:'152174',region:'肖稳'},
+    {name:'王宇',id:'139147',region:'肖稳'},{name:'温龙泉',id:'154444',region:'肖稳'},
+    {name:'陈猛',id:'156510',region:'肖稳'},{name:'陈玉川',id:'156362',region:'肖稳'},
+    {name:'张洪亮',id:'155190',region:'肖稳'},{name:'曾鹏',id:'143021',region:'肖稳'},
+    {name:'胡绍康',id:'134135',region:'肖稳'},{name:'金启均',id:'157646',region:'肖稳'},
+    {name:'苏江',id:'156140',region:'肖稳'},{name:'杨永鑫',id:'158219',region:'肖稳'}
+  ];
+  
+  localStorage.setItem('personnel_roster', JSON.stringify(employees));
+  
+  // Update file status to show mock data is loaded
+  var fileStatus = {};
+  employees.forEach(function(e){
+    fileStatus[e.name] = {loaded:true, rows:30};
+  });
+  localStorage.setItem('file_load_status', JSON.stringify(fileStatus));
+  localStorage.setItem('file_loaded_count', '13/13');
+  localStorage.setItem('total_loaded_rows', '900');
+}
+
 function init() {
+  // Generate mock data if no data exists
+  seedMockData();
+  
   // Render business overview first - has its own data
   renderBusiness();
   

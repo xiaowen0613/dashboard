@@ -338,79 +338,6 @@ tr:hover td.sticky-col { background:var(--bg3); }
   </div>
 </div>
 
-<script>
-function renderBusiness() {
-  var biz = [
-    // 3C业务
-    {section:'📱 3C业务', metrics:[
-      {name:'提交成交率',val:82.3,target:78,unit:'%'},
-      {name:'跟进及时率',val:91.5,target:95,unit:'%'},
-      {name:'上门率',val:76.8,target:80,unit:'%'},
-      {name:'上门后成交率',val:85.2,target:85,unit:'%'},
-      {name:'加单率',val:8.7,target:8.5,unit:'%'},
-      {name:'加单额',val:1680,target:1500,unit:''},
-      {name:'ETA准时率',val:93.4,target:98,unit:'%'}
-    ]},
-    {section:'🔄 一站式换新业务', metrics:[
-      {name:'取货及时率',val:94.2,target:96,unit:'%'},
-      {name:'跟进及时率',val:95.8,target:98,unit:'%'},
-      {name:'履约及时率',val:89.6,target:92.5,unit:'%'},
-      {name:'旧机成交率',val:85.3,target:88,unit:'%'}
-    ]},
-    {section:'👥 用户运营', metrics:[
-      {name:'企微回复及时率',val:87.5,target:85,unit:'%'},
-      {name:'交付添加率',val:86.2,target:88,unit:'%'},
-      {name:'企微1V1回复及时率',val:90.1,target:90,unit:'%'}
-    ]},
-    {section:'✅ 质量业务', metrics:[
-      {name:'质检准确率',val:96.8,target:95,unit:'%'},
-      {name:'退货损失额率',val:1.2,target:1,unit:'%'},
-      {name:'隐私清除率',val:94.5,target:95,unit:'%'}
-    ]},
-    {section:'💡 体验业务', metrics:[
-      {name:'催单率',val:2.3,target:2,unit:'%'},
-      {name:'客诉率',val:1.5,target:2,unit:'%'},
-      {name:'工单回复及时率',val:91.2,target:90,unit:'%'},
-      {name:'工单创建后电联率',val:88.6,target:90,unit:'%'}
-    ]},
-    {section:'💰 利润侧', metrics:[
-      {name:'入库及时率',val:93.8,target:95,unit:'%'},
-      {name:'成交人效',val:10.5,target:10,unit:''},
-      {name:'BD业绩达成率',val:76.4,target:100,unit:'%'},
-      {name:'自营业绩达成率',val:82.1,target:100,unit:'%'}
-    ]}
-  ];
-  
-  var html = '';
-  biz.forEach(function(s){
-    html += '<div class="biz-section"><div class="biz-section-title">'+s.section+'</div><div class="biz-cards">';
-    s.metrics.forEach(function(m){
-      var higher = m.name.indexOf('率')>=0||m.name.indexOf('及时')>=0;
-      var pct = m.target>0 ? Math.round(m.val/m.target*100) : 0;
-      var cls = higher ? (m.val>=m.target?'biz-ok':(m.val>=m.target*0.8?'biz-warn':'biz-bad')) : (m.val<=m.target?'biz-ok':(m.val<=m.target*1.2?'biz-warn':'biz-bad'));
-      var barCls = cls==='biz-ok'?'#16a34a':(cls==='biz-warn'?'#f97316':'#dc2626');
-      var display = m.unit==='%' ? m.val.toFixed(1)+'%' : m.val.toFixed(0);
-      var tgtDisplay = m.unit==='%' ? m.target+'%' : m.target.toFixed(0);
-      html += '<div class="biz-card '+cls+'"><div class="hdr">'+m.name+'</div><div class="val">'+display+'</div><div class="tgt">目标：'+tgtDisplay+'｜达成率'+pct+'%</div><div class="bar"><div class="bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+barCls+'"></div></div></div>';
-    });
-    html += '</div></div>';
-  });
-  document.getElementById('bizContent').innerHTML = html;
-}
-
-// Override switchTab to render business tab when selected
-var origSwitchTab = window.switchTab;
-window.switchTab = function(tabId, btn) {
-  if (tabId === 'tabBusiness') { renderBusiness(); }
-  if (origSwitchTab) { origSwitchTab(tabId, btn); } else {
-    document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');});
-    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-    document.getElementById(tabId).classList.add('active');
-    if (btn) { btn.classList.add('active'); }
-  }
-};
-</script>
-
 <!-- ==================== TAB 2: 指标趋势分析 ==================== -->
 <div class="tab-content" id="tab2">
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
@@ -1958,9 +1885,67 @@ function loadPanelStates() {
 
 // ==================== TAB SWITCHING ====================
 let _tabRendered = {};
+function renderBusiness() {
+  var biz = [
+    {section:'📱 3C业务', metrics:[
+      {name:'提交成交率',val:82.3,target:78,unit:'%'},
+      {name:'跟进及时率',val:91.5,target:95,unit:'%'},
+      {name:'上门率',val:76.8,target:80,unit:'%'},
+      {name:'上门后成交率',val:85.2,target:85,unit:'%'},
+      {name:'加单率',val:8.7,target:8.5,unit:'%'},
+      {name:'加单额',val:1680,target:1500,unit:''},
+      {name:'ETA准时率',val:93.4,target:98,unit:'%'}
+    ]},
+    {section:'🔄 一站式换新业务', metrics:[
+      {name:'取货及时率',val:94.2,target:96,unit:'%'},
+      {name:'跟进及时率',val:95.8,target:98,unit:'%'},
+      {name:'履约及时率',val:89.6,target:92.5,unit:'%'},
+      {name:'旧机成交率',val:85.3,target:88,unit:'%'}
+    ]},
+    {section:'👥 用户运营', metrics:[
+      {name:'企微回复及时率',val:87.5,target:85,unit:'%'},
+      {name:'交付添加率',val:86.2,target:88,unit:'%'},
+      {name:'企微1V1回复及时率',val:90.1,target:90,unit:'%'}
+    ]},
+    {section:'✅ 质量业务', metrics:[
+      {name:'质检准确率',val:96.8,target:95,unit:'%'},
+      {name:'退货损失额率',val:1.2,target:1,unit:'%'},
+      {name:'隐私清除率',val:94.5,target:95,unit:'%'}
+    ]},
+    {section:'💡 体验业务', metrics:[
+      {name:'催单率',val:2.3,target:2,unit:'%'},
+      {name:'客诉率',val:1.5,target:2,unit:'%'},
+      {name:'工单回复及时率',val:91.2,target:90,unit:'%'},
+      {name:'工单创建后电联率',val:88.6,target:90,unit:'%'}
+    ]},
+    {section:'💰 利润侧', metrics:[
+      {name:'入库及时率',val:93.8,target:95,unit:'%'},
+      {name:'成交人效',val:10.5,target:10,unit:''},
+      {name:'BD业绩达成率',val:76.4,target:100,unit:'%'},
+      {name:'自营业绩达成率',val:82.1,target:100,unit:'%'}
+    ]}
+  ];
+  var html = '';
+  biz.forEach(function(s){
+    html += '<div class="biz-section"><div class="biz-section-title">'+s.section+'</div><div class="biz-cards">';
+    s.metrics.forEach(function(m){
+      var higher = m.name.indexOf('率')>=0||m.name.indexOf('及时')>=0;
+      var pct = m.target>0 ? Math.round(m.val/m.target*100) : 0;
+      var cls = higher ? (m.val>=m.target?'biz-ok':(m.val>=m.target*0.8?'biz-warn':'biz-bad')) : (m.val<=m.target?'biz-ok':(m.val<=m.target*1.2?'biz-warn':'biz-bad'));
+      var barCls = cls==='biz-ok'?'#16a34a':(cls==='biz-warn'?'#f97316':'#dc2626');
+      var display = m.unit==='%' ? m.val.toFixed(1)+'%' : m.val.toFixed(0);
+      var tgtDisplay = m.unit==='%' ? m.target+'%' : m.target.toFixed(0);
+      html += '<div class="biz-card '+cls+'"><div class="hdr">'+m.name+'</div><div class="val">'+display+'</div><div class="tgt">目标：'+tgtDisplay+'｜达成率'+pct+'%</div><div class="bar"><div class="bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+barCls+'"></div></div></div>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('bizContent').innerHTML = html;
+}
 let _tabDirty = {};
 
 function switchTab(tabId, btn) {
+  // Render business tab when selected
+  if (tabId === 'tabBusiness') { renderBusiness(); }
   // Sliding indicator
   const indicator = document.getElementById('tab-indicator');
   if (indicator) {

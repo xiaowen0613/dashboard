@@ -710,7 +710,7 @@ const STATE = {
   fileStatus: {},        // { prefix: { loaded: bool, rows: int } }
   config: null,          // indicator config with targets and weights
   cleaningLog: [],       // cleaning log entries
-  currentTab: 'tab1',
+  currentTab: 'tabBusiness',
   currentArchive: null,  // currently loaded archive key
   archives: [],
   filters: {
@@ -1850,6 +1850,7 @@ function applyTheme() {
   document.getElementById('theme-btn').textContent = isDark ? '☀️ 浅色' : '🌙 深色';
   localStorage.setItem('theme', STATE.theme);
   // Redraw charts if visible
+  if (STATE.currentTab === 'tabBusiness') renderBusiness();
   if (STATE.currentTab === 'tab2') renderTrendChart();
   if (STATE.currentTab === 'tab3') { renderRadarChart(); }
 }

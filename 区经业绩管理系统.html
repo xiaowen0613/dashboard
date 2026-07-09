@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>区经业绩管理系统</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: {} }
+}
+</script>
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --text: #1e293b; --text2: #64748b;
+  --border: #e2e8f0; --accent: #3b82f6; --red: #ef4444; --orange: #f97316;
+  --yellow: #eab308; --green: #22c55e; --dkgreen: #16a34a;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --radius: 12px;
+}
+.dark {
+  --bg: #0f172a; --bg2: #1e293b; --bg3: #334155; --text: #e2e8f0; --text2: #94a3b8;
+  --border: #475569; --accent: #60a5fa; --red: #f87171; --orange: #fb923c;
+  --yellow: #facc15; --green: #4ade80; --dkgreen: #22c55e;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; margin:0; transition: background .3s, color .3s; }
+.card { background: var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); margin-bottom:16px; transition: background .3s, border-color .3s; }
+.btn { padding:8px 18px; border-radius:20px; border:none; cursor:pointer; font-size:14px; font-weight:500; transition:all .2s ease; display:inline-flex; align-items:center; gap:6px; transform-origin:center; }
+.btn:hover { opacity:.88; transform:scale(1.03); }
+.btn:active { transform:scale(0.97); }
+.btn-sm { padding:5px 14px; font-size:12px; border-radius:16px; }
+.btn-xs { padding:3px 10px; font-size:11px; border-radius:14px; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-danger { background:var(--red); color:#fff; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-outline:hover { background:var(--bg3); }
+input,select,textarea { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:8px 12px; color:var(--text); font-size:14px; outline:none; transition: border-color .2s; }
+input:focus,select:focus,textarea:focus { border-color:var(--accent); }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th,td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; }
+th { background:var(--bg3); font-weight:600; cursor:pointer; user-select:none; position:sticky; top:0; z-index:1; }
+th:hover { background:var(--border); }
+tr:hover td { background:var(--bg3); }
+.tab-btn { padding:10px 20px; border:none; border-bottom:3px solid transparent; background:transparent; color:var(--text2); cursor:pointer; font-size:15px; font-weight:500; transition:color .2s, border-color .2s; white-space:nowrap; }
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+.tab-content { display:none; }
+.tab-content.active { display:block; animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+.badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:500; background:var(--bg3); color:var(--text2); }
+.badge-success { background:#dcfce7; color:#166534; }
+.dark .badge-success { background:#064e3b; color:#6ee7b7; }
+.badge-warning { background:#fef9c3; color:#854d0e; }
+.dark .badge-warning { background:#713f12; color:#fcd34d; }
+.badge-danger { background:#fee2e2; color:#991b1b; }
+.dark .badge-danger { background:#7f1d1d; color:#fca5a5; }
+.modal-overlay { position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; }
+.modal { background:var(--bg2); border-radius:16px; padding:24px; max-width:900px; width:95%; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+.scrollbar-thin { scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+.grid-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
+.metric-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:4px; transition: all .2s; }
+.metric-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+.metric-label { font-size:12px; font-weight:500; color:var(--text2); display:flex; align-items:center; gap:6px; }
+.metric-value { font-size:24px; font-weight:700; color:var(--text); line-height:1.2; }
+.metric-sub { font-size:11px; color:var(--text2); display:flex; align-items:center; gap:4px; }
+.metric-change-up { color:var(--green); font-weight:600; }
+.metric-change-down { color:var(--red); font-weight:600; }
+.gauge-deepred { color:#dc2626; }
+.gauge-orange { color:#f97316; }
+.gauge-yellow { color:#ca8a04; }
+.gauge-lightgreen { color:#16a34a; }
+.gauge-deepgreen { color:#15803d; }
+.rate-deepred { color:#dc2626; font-weight:700; }
+.rate-orange { color:#f97316; font-weight:600; }
+.rate-yellow { color:#b8860b; }
+.rate-lightgreen { color:#16a34a; }
+.rate-deepgreen { color:#15803d; font-weight:700; }
+.tooltip-text { position:relative; }
+.tooltip-text::after { content:attr(data-tip); position:absolute; bottom:120%; left:50%; transform:translateX(-50%); background:#1e293b; color:#fff; padding:4px 10px; border-radius:6px; font-size:11px; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .2s; z-index:100; }
+.tooltip-text:hover::after { opacity:1; }
+.pagination-btn { padding:4px 10px; border:1px solid var(--border); background:var(--bg2); color:var(--text); border-radius:6px; cursor:pointer; font-size:12px; }
+.pagination-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.pagination-btn:disabled { opacity:.4; cursor:not-allowed; }
+</style>
+</head>
+<body class="scrollbar-thin">
+
+<!-- HEADER -->
+<div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;transition:background .3s;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <h1 style="font-size:22px;font-weight:700;margin:0;color:var(--text);">📊 区经业绩人员管理系统</h1>
+    <span id="header-subtitle" style="font-size:13px;color:var(--text2);"></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span id="status-indicator" style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;">✅ 模拟数据已加载</span>
+    <button class="btn btn-outline btn-sm tooltip-text" data-tip="切换深色/浅色模式" onclick="toggleTheme()" id="theme-btn">🌙 深色</button>
+    <button class="btn btn-outline btn-sm tooltip-text" data-tip="使用说明" onclick="toggleHelp()">❓ 帮助</button>
+  </div>
+</div>
+
+<div style="max-width:1600px;margin:0 auto;padding:16px 24px;">
+
+<!-- 数据导入区 -->
+<div class="card" id="upload-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <h3 style="font-weight:600;margin:0;">📥 数据导入</h3>
+      <button class="btn btn-primary tooltip-text" data-tip="一键加载模拟数据" onclick="loadMockData()">🚀 加载模拟数据</button>
+      <button class="btn btn-outline tooltip-text" data-tip="上传Excel文件" onclick="document.getElementById('file-input').click()">📄 上传文件</button>
+      <input type="file" id="file-input" accept=".csv,.xls,.xlsx" style="display:none;" onchange="handleFileUpload(event)">
+      <button class="btn btn-outline btn-sm" onclick="clearAllData()">🗑️ 清空数据</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);">
+      <span id="data-status-badge" class="badge badge-success">✅ 模拟数据就绪</span>
+      <span id="row-count-badge" class="badge">总行数: 0</span>
+    </div>
+  </div>
+</div>
+
+<!-- 指标配置面板 -->
+<div class="card" id="config-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="togglePanel('config-body')">
+    <h3 style="font-weight:600;margin:0;">⚙️ 指标目标 & 权重配置</h3>
+    <span id="config-arrow" style="transition:transform .2s;">▼</span>
+  </div>
+  <div id="config-body" style="margin-top:16px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;" id="config-grid"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="saveConfig()">💾 保存配置</button>
+      <button class="btn btn-outline btn-sm" onclick="resetConfig()">🔄 重置默认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 筛选区 -->
+<div class="card">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="font-weight:600;font-size:14px;">🔍 筛选</span>
+    <button class="btn btn-xs" onclick="setDatePreset('today')" style="background:var(--bg3);color:var(--text);border:none;padding:4px 12px;border-radius:14px;cursor:pointer;">今日</button>
+    <button class="btn btn-xs" onclick="setDatePreset('yesterday')" style="background:var(--bg3);color:var(--text);border:none;padding:4px 12px;border-radius:14px;cursor:pointer;">昨日</button>
+    <button class="btn btn-xs" onclick="setDatePreset('7d')" style="background:var(--bg3);color:var(--text);border:none;padding:4px 12px;border-radius:14px;cursor:pointer;">近7天</button>
+    <button class="btn btn-xs" onclick="setDatePreset('30d')" style="background:var(--bg3);color:var(--text);border:none;padding:4px 12px;border-radius:14px;cursor:pointer;">近30天</button>
+    <button class="btn btn-xs" onclick="setDatePreset('month')" style="background:var(--bg3);color:var(--text);border:none;padding:4px 12px;border-radius:14px;cursor:pointer;">本月</button>
+    <button class="btn btn-xs" onclick="setDatePreset('lastMonth')" style="background:var(--bg3);color:var(--text);border:none;padding:4px 12px;border-radius:14px;cursor:pointer;">上月</button>
+    <button class="btn btn-xs" onclick="setDatePreset('quarter')" style="background:var(--bg3);color:var(--text);border:none;padding:4px 12px;border-radius:14px;cursor:pointer;">本季度</button>
+    <input type="date" id="date-from" title="开始日期" style="width:140px;" onchange="onFilterChange()">
+    <span style="color:var(--text2);">至</span>
+    <input type="date" id="date-to" title="结束日期" style="width:140px;" onchange="onFilterChange()">
+    <select id="filter-region" title="区域筛选" style="width:140px;" onchange="onFilterChange()">
+      <option value="all">全部区域</option>
+    </select>
+    <input type="text" id="filter-employee" placeholder="员工姓名搜索..." style="width:150px;" oninput="onFilterChange()">
+    <select id="filter-aggregate" title="聚合方式" style="width:110px;" onchange="onFilterChange()">
+      <option value="employee">按人员</option>
+      <option value="day">按日</option>
+      <option value="month">按月</option>
+    </select>
+    <button class="btn btn-outline btn-sm" onclick="resetAllFilters()" style="color:var(--red);">🔄 重置筛选</button>
+  </div>
+</div>
+
+<!-- Global Status Bar -->
+<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text2);padding:4px 0;margin-bottom:8px;" id="global-status-bar">
+  <span>📅 时间范围: <b id="gs-daterange">全部</b></span>
+  <span>📍 区域: <b id="gs-region">全部</b></span>
+  <span>📊 有效行数: <b id="gs-rows">0</b></span>
+  <span>👥 员工数: <b id="gs-employees">0</b></span>
+</div>
+
+<!-- Tab Navigation -->
+<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;overflow-x:auto;" id="tab-nav-bar">
+  <button class="tab-btn active" onclick="switchTab('tab1',this)">📈 业绩总看板</button>
+  <button class="tab-btn" onclick="switchTab('tab2',this)">📉 指标趋势分析</button>
+  <button class="tab-btn" onclick="switchTab('tab3',this)">👤 区域人像画本</button>
+</div>
+
+<!-- TAB 1: 业绩总看板 -->
+<div class="tab-content active" id="tab1">
+  <!-- 核心指标卡片 -->
+  <div id="kpi-cards" class="grid-cards" style="margin-bottom:16px;"></div>
+  <!-- 人员档案管理表 -->
+  <div class="card" id="personnel-panel" style="margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="togglePanel('personnel-body')">
+      <h3 style="font-weight:600;margin:0;">📋 人员档案管理 <span style="font-size:12px;color:var(--text2);font-weight:400;" id="personnel-count-badge"></span></h3>
+      <span id="personnel-arrow" style="transition:transform .2s;">▶</span>
+    </div>
+    <div id="personnel-body" style="display:none;margin-top:16px;">
+      <div style="overflow-x:auto;max-height:300px;overflow-y:auto;">
+        <table>
+          <thead><tr><th>姓名</th><th>工号</th><th>所属区域</th><th style="width:100px;">状态</th></tr></thead>
+          <tbody id="personnel-table-tbody"></tbody>
+        </table>
+      </div>
+      <div id="personnel-empty" style="text-align:center;padding:16px;color:var(--text2);display:none;">暂无人员档案</div>
+    </div>
+  </div>
+  <!-- 数据看板表 -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+    <h3 style="font-weight:600;margin:0;">核心人员业绩明细</h3>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="exportDashboard()">📥 导出Excel</button>
+    </div>
+  </div>
+  <div style="overflow-x:auto;max-height:600px;overflow-y:auto;" id="dashboard-table-container">
+    <table id="dashboard-table">
+      <thead id="dashboard-thead"></thead>
+      <tbody id="dashboard-tbody"></tbody>
+    </table>
+  </div>
+  <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px;" id="dashboard-pagination"></div>
+</div>
+
+<!-- TAB 2: 指标趋势分析 -->
+<div class="tab-content" id="tab2">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+    <select id="trend-indicator" style="width:180px;" onchange="renderTrendChart()">
+      <option value="">请选择指标...</option>
+    </select>
+    <select id="trend-employee" style="width:150px;" onchange="renderTrendChart()">
+      <option value="">全部员工(均值)</option>
+    </select>
+    <button class="btn btn-outline btn-sm" onclick="setTrendType('line')" id="trend-btn-line">📈 折线图</button>
+    <button class="btn btn-outline btn-sm" onclick="setTrendType('bar')" id="trend-btn-bar">📊 柱状图</button>
+    <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;">
+      <input type="checkbox" id="trend-show-target" checked onchange="renderTrendChart()"> 显示目标线
+    </label>
+  </div>
+  <div id="trend-chart" style="width:100%;height:480px;"></div>
+</div>
+
+<!-- TAB 3: 区域人像画本 -->
+<div class="tab-content" id="tab3">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <h3 style="font-weight:600;margin:0;">🏢 区域总览</h3>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px;" id="team-stats"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+    <div class="card">
+      <h4 style="font-weight:600;margin:0 0 12px 0;">🎯 智能梯队分层</h4>
+      <div id="tier-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+    </div>
+    <div class="card">
+      <h4 style="font-weight:600;margin:0 0 12px 0;">📡 双叠加雷达图</h4>
+      <div id="radar-chart" style="width:100%;height:350px;"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <span style="font-weight:600;">👥 人员列表</span>
+      <select id="tier-filter" style="width:130px;" onchange="renderPersonList()">
+        <option value="all">全部梯队</option>
+        <option value="benchmark">🏆 标杆梯队</option>
+        <option value="stable">✅ 稳定达标</option>
+        <option value="improve">⚠️ 待提升</option>
+        <option value="help">🔴 重点帮扶</option>
+      </select>
+      <input type="text" id="person-search" placeholder="姓名搜索..." style="width:140px;" oninput="renderPersonList()">
+      <span style="font-size:12px;color:var(--text2);" id="person-list-count"></span>
+    </div>
+    <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+      <table id="person-list-table">
+        <thead><tr><th>⭐</th><th>姓名</th><th>区域</th><th>综合得分</th><th>梯队</th><th>短板数</th></tr></thead>
+        <tbody id="person-list-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- end max-width container -->
+
+<!-- Help Modal -->
+<div class="modal-overlay" id="help-modal" style="display:none;">
+  <div class="modal" style="max-width:600px;">
+    <h3 style="font-weight:700;">❓ 使用说明</h3>
+    <div style="font-size:13px;line-height:1.8;">
+      <p><b>📊 区经业绩人员管理系统</b> — 精简看板版</p>
+      <p><b>1. 数据加载：</b>点击「加载模拟数据」一键填充示例数据，或上传Excel文件。</p>
+      <p><b>2. 指标配置：</b>在配置面板设置各指标的目标值和权重。</p>
+      <p><b>3. 业绩看板(Tab1)：</b>查看核心指标卡片、人员档案、业绩明细表。</p>
+      <p><b>4. 趋势分析(Tab2)：</b>选择指标和员工，查看折线/柱状趋势图。</p>
+      <p><b>5. 区域人像(Tab3)：</b>区域总览、梯队分层、雷达图对比、人员列表。</p>
+      <p><b>6. 主题切换：</b>右上角切换深色/浅色模式。</p>
+    </div>
+    <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="document.getElementById('help-modal').style.display='none'">关闭</button>
+  </div>
+</div>
+
+
+<script>
+// ==================== MOCK DATA ====================
+const MOCK_PERSONNEL = [
+  { name:'贺尚琦', id:'146052', region:'嘉定' },{ name:'袁泽豪', id:'156073', region:'嘉定' },
+  { name:'季洪杰', id:'145476', region:'嘉定' },{ name:'朱新安', id:'146061', region:'嘉定' },
+  { name:'祝高升', id:'142656', region:'嘉定' },{ name:'陆鑫', id:'143549', region:'嘉定' },
+  { name:'李志钢', id:'154980', region:'嘉定' },{ name:'饶敏', id:'145563', region:'青浦' },
+  { name:'方振华', id:'148556', region:'青浦' },{ name:'刘苏杨', id:'148041', region:'青浦' },
+  { name:'张乐乐', id:'150264', region:'青浦' },{ name:'吴金鹏', id:'148727', region:'青浦' },
+  { name:'熊辉', id:'155077', region:'青浦' },{ name:'郭子祥', id:'139569', region:'圆新' },
+  { name:'姜维', id:'148734', region:'圆新' },{ name:'杨开银', id:'152251', region:'圆新' },
+  { name:'陈龙', id:'148974', region:'圆新' },{ name:'陈玉林', id:'148864', region:'圆新' },
+  { name:'郑宇', id:'155733', region:'圆新' },{ name:'李庆宇', id:'151401', region:'圆新' },
+  { name:'唐帮仪', id:'144154', region:'圆新' },{ name:'于恩源', id:'136784', region:'圆新' },
+  { name:'吕宏博', id:'145395', region:'圆新' },{ name:'刘浩', id:'157237', region:'圆新' },
+  { name:'赵文宣', id:'145031', region:'锦辉' },{ name:'何奎', id:'148291', region:'锦辉' },
+  { name:'曹琪旺', id:'142816', region:'锦辉' },{ name:'倪胜勇', id:'152927', region:'锦辉' },
+  { name:'胡新勇', id:'149970', region:'锦辉' },{ name:'刘彦昌', id:'138346', region:'锦辉' },
+  { name:'冯家俊', id:'156351', region:'锦辉' },{ name:'盛赢闻', id:'158950', region:'锦辉' },
+];
+
+const INDICATOR_DEFS = [
+  { key:'取货及时率', module:'一站式', unit:'%', weight:15, targetDay:95, targetMonth:95, reverse:false },
+  { key:'跟进及时率', module:'一站式', unit:'%', weight:10, targetDay:90, targetMonth:90, reverse:false },
+  { key:'履约及时率', module:'一站式', unit:'%', weight:10, targetDay:85, targetMonth:85, reverse:false },
+  { key:'新机成交率', module:'一站式', unit:'%', weight:10, targetDay:80, targetMonth:80, reverse:false },
+  { key:'旧机成交率', module:'一站式', unit:'%', weight:10, targetDay:75, targetMonth:75, reverse:false },
+  { key:'上门跟进及时率', module:'上门履约', unit:'%', weight:8, targetDay:92, targetMonth:92, reverse:false },
+  { key:'ETA履约准时率', module:'上门履约', unit:'%', weight:8, targetDay:88, targetMonth:88, reverse:false },
+  { key:'加单率', module:'转化', unit:'%', weight:8, targetDay:60, targetMonth:60, reverse:false },
+  { key:'企微交付添加率', module:'企微运营', unit:'%', weight:5, targetDay:85, targetMonth:85, reverse:false },
+  { key:'企微回复及时率', module:'企微运营', unit:'%', weight:5, targetDay:90, targetMonth:90, reverse:false },
+  { key:'隐私清除率', module:'质检', unit:'%', weight:5, targetDay:95, targetMonth:95, reverse:false },
+  { key:'工单量', module:'工单', unit:'单', weight:3, targetDay:5, targetMonth:150, reverse:true },
+  { key:'周期回收总单量', module:'人力效能', unit:'单', weight:3, targetDay:10, targetMonth:300, reverse:false },
+];
+
+const REGIONS = ['嘉定','青浦','圆新','锦辉'];
+
+function seededRandom(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+function generateMockData() {
+  const rows = [];
+  const startDate = new Date('2024-06-01');
+  const endDate = new Date('2024-06-30');
+  const rng = seededRandom(42);
+  for (const person of MOCK_PERSONNEL) {
+    const d = new Date(startDate);
+    while (d <= endDate) {
+      const dateStr = d.toISOString().substring(0,10);
+      if (rng() > 0.15) {
+        rows.push({
+          员工姓名: person.name,
+          工号: person.id,
+          所属区域: person.region,
+          日期: dateStr,
+          取货及时率: +(80 + rng()*18).toFixed(1),
+          跟进及时率: +(80 + rng()*19).toFixed(1),
+          履约及时率: +(75 + rng()*22).toFixed(1),
+          新机成交率: +(65 + rng()*30).toFixed(1),
+          旧机成交率: +(60 + rng()*32).toFixed(1),
+          上门跟进及时率: +(78 + rng()*20).toFixed(1),
+          ETA履约准时率: +(82 + rng()*16).toFixed(1),
+          加单率: +(40 + rng()*40).toFixed(1),
+          企微交付添加率: +(70 + rng()*28).toFixed(1),
+          企微回复及时率: +(75 + rng()*23).toFixed(1),
+          隐私清除率: +(85 + rng()*14).toFixed(1),
+          工单量: Math.max(0, Math.floor(rng()*12) - 2),
+          周期回收总单量: Math.floor(rng()*20) + 3,
+        });
+      }
+      d.setDate(d.getDate() + 1);
+    }
+  }
+  return rows;
+}
+
+// ==================== STATE ====================
+const STATE = {
+  theme: localStorage.getItem('theme') || 'light',
+  data: [],
+  filteredData: [],
+  personnel: [...MOCK_PERSONNEL],
+  config: null,
+  currentTab: 'tab1',
+  filters: { dateFrom: '', dateTo: '', region: 'all', employee: '', aggregate: 'employee' },
+  trendType: 'line',
+  trendChart: null,
+  radarChart: null,
+  dashboardSort: { key: '综合得分', asc: false },
+  dashboardPage: 1,
+  pageSize: 50,
+};
+
+// ==================== THEME ====================
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  STATE.theme = isDark ? 'dark' : 'light';
+  localStorage.setItem('theme', STATE.theme);
+  document.getElementById('theme-btn').textContent = isDark ? '☀️ 浅色' : '🌙 深色';
+}
+
+function initTheme() {
+  if (STATE.theme === 'dark') {
+    document.documentElement.classList.add('dark');
+    document.getElementById('theme-btn').textContent = '☀️ 浅色';
+  }
+}
+
+// ==================== PANEL TOGGLE ====================
+function togglePanel(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  const arrow = id === 'config-body' ? document.getElementById('config-arrow') : document.getElementById('personnel-arrow');
+  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+}
+
+// ==================== HELP ====================
+function toggleHelp() {
+  const modal = document.getElementById('help-modal');
+  modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+}
+
+// ==================== TAB SWITCHING ====================
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  if (btn) btn.classList.add('active');
+  STATE.currentTab = tabId;
+  if (tabId === 'tab2') renderTrendChart();
+  if (tabId === 'tab3') { renderTeamStats(); renderTierCards(); renderRadarChart(); renderPersonList(); }
+}
+
+// ==================== CONFIG ====================
+function getDefaultConfig() {
+  const cfg = {};
+  for (const def of INDICATOR_DEFS) {
+    cfg[def.key] = { targetDay: def.targetDay, targetMonth: def.targetMonth, weight: def.weight };
+  }
+  return cfg;
+}
+
+function getConfig() {
+  if (STATE.config) return STATE.config;
+  const saved = localStorage.getItem('indicator_config');
+  if (saved) {
+    try { STATE.config = JSON.parse(saved); return STATE.config; } catch(e) {}
+  }
+  STATE.config = getDefaultConfig();
+  return STATE.config;
+}
+
+function renderConfigPanel() {
+  const cfg = getConfig();
+  const grid = document.getElementById('config-grid');
+  grid.innerHTML = INDICATOR_DEFS.map(def => {
+    const c = cfg[def.key] || { targetDay: def.targetDay, targetMonth: def.targetMonth, weight: def.weight };
+    return '<div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border);">'
+      + '<div style="font-weight:600;font-size:13px;margin-bottom:6px;">' + def.key
+      + ' <span style="font-weight:400;color:var(--text2);font-size:11px;">(' + def.module + ')</span></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;">'
+      + '<label>日目标<br><input type="number" id="cfg-' + def.key + '-day" value="' + c.targetDay + '" style="width:100%;padding:4px 8px;font-size:12px;"></label>'
+      + '<label>月目标<br><input type="number" id="cfg-' + def.key + '-month" value="' + c.targetMonth + '" style="width:100%;padding:4px 8px;font-size:12px;"></label>'
+      + '<label>权重(%)<br><input type="number" id="cfg-' + def.key + '-weight" value="' + c.weight + '" style="width:100%;padding:4px 8px;font-size:12px;"></label>'
+      + '</div></div>';
+  }).join('');
+}
+
+function saveConfig() {
+  const cfg = {};
+  for (const def of INDICATOR_DEFS) {
+    const day = parseFloat(document.getElementById('cfg-' + def.key + '-day').value) || 0;
+    const month = parseFloat(document.getElementById('cfg-' + def.key + '-month').value) || 0;
+    const weight = parseFloat(document.getElementById('cfg-' + def.key + '-weight').value) || 0;
+    cfg[def.key] = { targetDay: day, targetMonth: month, weight: weight };
+  }
+  STATE.config = cfg;
+  localStorage.setItem('indicator_config', JSON.stringify(cfg));
+  alert('✅ 配置已保存');
+  refreshAll();
+}
+
+function resetConfig() {
+  if (!confirm('确定重置为默认配置？')) return;
+  STATE.config = null;
+  localStorage.removeItem('indicator_config');
+  renderConfigPanel();
+  refreshAll();
+  alert('已重置为默认配置');
+}
+
+// ==================== FILTERS ====================
+function setDatePreset(preset) {
+  const now = new Date();
+  const fmt = d => d.toISOString().substring(0,10);
+  let from = '', to = fmt(now);
+  switch(preset) {
+    case 'today': from = fmt(now); break;
+    case 'yesterday': { const d = new Date(now); d.setDate(d.getDate()-1); from = fmt(d); to = fmt(d); break; }
+    case '7d': { const d = new Date(now); d.setDate(d.getDate()-6); from = fmt(d); break; }
+    case '30d': { const d = new Date(now); d.setDate(d.getDate()-29); from = fmt(d); break; }
+    case 'month': from = fmt(new Date(now.getFullYear(), now.getMonth(), 1)); break;
+    case 'lastMonth': { const d = new Date(now.getFullYear(), now.getMonth()-1, 1); from = fmt(d); to = fmt(new Date(now.getFullYear(), now.getMonth(), 0)); break; }
+    case 'quarter': { const q = Math.floor(now.getMonth()/3); from = fmt(new Date(now.getFullYear(), q*3, 1)); break; }
+    default: return;
+  }
+  document.getElementById('date-from').value = from;
+  document.getElementById('date-to').value = to;
+  onFilterChange();
+}
+
+function onFilterChange() {
+  STATE.filters.dateFrom = document.getElementById('date-from').value;
+  STATE.filters.dateTo = document.getElementById('date-to').value;
+  STATE.filters.region = document.getElementById('filter-region').value;
+  STATE.filters.employee = document.getElementById('filter-employee').value.trim();
+  STATE.filters.aggregate = document.getElementById('filter-aggregate').value;
+  applyFilters();
+}
+
+function resetAllFilters() {
+  document.getElementById('date-from').value = '';
+  document.getElementById('date-to').value = '';
+  document.getElementById('filter-region').value = 'all';
+  document.getElementById('filter-employee').value = '';
+  document.getElementById('filter-aggregate').value = 'employee';
+  STATE.filters = { dateFrom: '', dateTo: '', region: 'all', employee: '', aggregate: 'employee' };
+  applyFilters();
+}
+
+function applyFilters() {
+  const f = STATE.filters;
+  let data = STATE.data;
+  if (f.dateFrom) data = data.filter(r => r.日期 >= f.dateFrom);
+  if (f.dateTo) data = data.filter(r => r.日期 <= f.dateTo);
+  if (f.region && f.region !== 'all') data = data.filter(r => r.所属区域 === f.region);
+  if (f.employee) data = data.filter(r => r.员工姓名.includes(f.employee));
+  STATE.filteredData = data;
+  updateStatusBar();
+  renderKPICards();
+  renderDashboardTable();
+}
+
+function populateFilterUI() {
+  const sel = document.getElementById('filter-region');
+  const current = sel.value;
+  sel.innerHTML = '<option value="all">全部区域</option>' + REGIONS.map(r => '<option value="' + r + '">' + r + '</option>').join('');
+  sel.value = current;
+}
+
+function updateStatusBar() {
+  const data = STATE.filteredData;
+  const uniqueEmployees = new Set(data.map(r => r.员工姓名));
+  document.getElementById('gs-daterange').textContent = STATE.filters.dateFrom || STATE.filters.dateTo
+    ? (STATE.filters.dateFrom||'最早') + ' ~ ' + (STATE.filters.dateTo||'最晚') : '全部';
+  document.getElementById('gs-region').textContent = STATE.filters.region === 'all' ? '全部' : STATE.filters.region;
+  document.getElementById('gs-rows').textContent = data.length;
+  document.getElementById('gs-employees').textContent = uniqueEmployees.size;
+}
+
+// ==================== KPI CARDS ====================
+function computeKPI(data, indicatorKey, def) {
+  if (data.length === 0) return { value: 0, rate: 0, target: def.targetDay };
+  const values = data.map(r => parseFloat(r[indicatorKey])).filter(v => !isNaN(v));
+  if (values.length === 0) return { value: 0, rate: 0, target: def.targetDay };
+  const avg = values.reduce((a,b) => a+b, 0) / values.length;
+  const target = def.targetDay;
+  const rate = target > 0 ? avg / target : 1;
+  return { value: avg, rate, target };
+}
+
+function renderKPICards() {
+  const container = document.getElementById('kpi-cards');
+  const data = STATE.filteredData;
+  const cfg = getConfig();
+  container.innerHTML = INDICATOR_DEFS.map(def => {
+    const c = cfg[def.key] || { targetDay: def.targetDay, weight: def.weight };
+    const { value, rate, target } = computeKPI(data, def.key, def);
+    const displayVal = def.unit === '%' ? value.toFixed(1) + '%' : value.toFixed(1);
+    const rateClass = rate >= 1 ? 'metric-change-up' : 'metric-change-down';
+    const rateText = rate >= 1 ? '✓ 达标' : (rate * 100).toFixed(0) + '%';
+    const gaugeClass = rate >= 1.0 ? 'gauge-deepgreen' : rate >= 0.9 ? 'gauge-lightgreen' : rate >= 0.75 ? 'gauge-yellow' : rate >= 0.6 ? 'gauge-orange' : 'gauge-deepred';
+    return '<div class="metric-card">'
+      + '<div class="metric-label"><span>' + def.key + '</span><span style="font-size:10px;color:var(--text2);">' + def.module + '</span></div>'
+      + '<div class="metric-value">' + displayVal + '</div>'
+      + '<div class="metric-sub">'
+      + '<span class="' + rateClass + '">' + rateText + '</span>'
+      + '<span style="margin-left:auto;">目标: ' + target + def.unit + '</span>'
+      + '<span class="' + gaugeClass + '" style="font-weight:600;font-size:12px;">⚡</span>'
+      + '</div></div>';
+  }).join('');
+}
+
+// ==================== PERSONNEL TABLE ====================
+function renderPersonnelTable() {
+  const tbody = document.getElementById('personnel-table-tbody');
+  const empty = document.getElementById('personnel-empty');
+  if (STATE.personnel.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = STATE.personnel.map(p => '<tr><td>' + escapeHtml(p.name) + '</td><td>' + escapeHtml(p.id) + '</td><td>' + escapeHtml(p.region) + '</td><td><span class="badge badge-success">在职</span></td></tr>').join('');
+  document.getElementById('personnel-count-badge').textContent = '(' + STATE.personnel.length + '人)';
+}
+
+// ==================== DASHBOARD TABLE ====================
+function renderDashboardTable() {
+  const data = STATE.filteredData;
+  const agg = STATE.filters.aggregate || 'employee';
+  const cfg = getConfig();
+  const thead = document.getElementById('dashboard-thead');
+  const tbody = document.getElementById('dashboard-tbody');
+  const pagination = document.getElementById('dashboard-pagination');
+
+  let rows = [];
+  if (agg === 'employee') {
+    const grouped = {};
+    data.forEach(r => {
+      const key = r.员工姓名 + '|' + r.所属区域;
+      if (!grouped[key]) grouped[key] = { 员工姓名: r.员工姓名, 所属区域: r.所属区域, count: 0, values: {} };
+      grouped[key].count++;
+      for (const def of INDICATOR_DEFS) {
+        const v = parseFloat(r[def.key]);
+        if (!isNaN(v)) {
+          if (!grouped[key].values[def.key]) grouped[key].values[def.key] = [];
+          grouped[key].values[def.key].push(v);
+        }
+      }
+    });
+    rows = Object.values(grouped).map(g => {
+      const row = { 员工姓名: g.员工姓名, 所属区域: g.所属区域, 天数: g.count };
+      let totalScore = 0, totalWeight = 0;
+      for (const def of INDICATOR_DEFS) {
+        const vals = g.values[def.key] || [];
+        const avg = vals.length > 0 ? vals.reduce((a,b) => a+b, 0) / vals.length : 0;
+        row[def.key] = avg;
+        const c = cfg[def.key] || { targetDay: def.targetDay, weight: def.weight };
+        const target = c.targetDay;
+        const rate = target > 0 ? avg / target : 0;
+        const capped = Math.min(rate, 1.5);
+        totalScore += capped * c.weight;
+        totalWeight += c.weight;
+      }
+      row['综合得分'] = totalWeight > 0 ? +(totalScore / totalWeight * 100).toFixed(1) : 0;
+      return row;
+    });
+  } else {
+    const grouped = {};
+    data.forEach(r => {
+      const key = agg === 'day' ? r.日期 : r.日期.substring(0,7);
+      if (!grouped[key]) grouped[key] = { 日期: key, count: 0, values: {} };
+      grouped[key].count++;
+      for (const def of INDICATOR_DEFS) {
+        const v = parseFloat(r[def.key]);
+        if (!isNaN(v)) {
+          if (!grouped[key].values[def.key]) grouped[key].values[def.key] = [];
+          grouped[key].values[def.key].push(v);
+        }
+      }
+    });
+    rows = Object.values(grouped).sort((a,b) => a.日期.localeCompare(b.日期)).map(g => {
+      const row = { 日期: g.日期, 人数: g.count };
+      for (const def of INDICATOR_DEFS) {
+        const vals = g.values[def.key] || [];
+        row[def.key] = vals.length > 0 ? +(vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : 0;
+      }
+      return row;
+    });
+  }
+
+  // Sort
+  const sortKey = STATE.dashboardSort.key;
+  if (sortKey) {
+    rows.sort((a, b) => {
+      const va = parseFloat(a[sortKey]) || 0;
+      const vb = parseFloat(b[sortKey]) || 0;
+      return STATE.dashboardSort.asc ? va - vb : vb - va;
+    });
+  }
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(rows.length / STATE.pageSize));
+  STATE.dashboardPage = Math.min(STATE.dashboardPage, totalPages);
+  const start = (STATE.dashboardPage - 1) * STATE.pageSize;
+  const pageRows = rows.slice(start, start + STATE.pageSize);
+
+  // Build header
+  const keys = agg === 'employee' ? ['员工姓名','所属区域','天数',...INDICATOR_DEFS.map(d=>d.key),'综合得分'] : ['日期','人数',...INDICATOR_DEFS.map(d=>d.key)];
+  thead.innerHTML = '<tr>' + keys.map(k => '<th onclick="sortDashboard('' + k + '')" style="' + (k === sortKey ? 'color:var(--accent);' : '') + '">' + k + (k === sortKey ? (STATE.dashboardSort.asc ? ' ▲' : ' ▼') : '') + '</th>').join('') + '</tr>';
+
+  tbody.innerHTML = pageRows.map(row => {
+    const cells = keys.map(k => {
+      const v = row[k];
+      if (v === undefined || v === null) return '<td></td>';
+      if (typeof v === 'number') {
+        const isPct = INDICATOR_DEFS.some(d => d.key === k && d.unit === '%');
+        if (isPct) return '<td class="num-right" style="text-align:right;">' + v.toFixed(1) + '%</td>';
+        return '<td style="text-align:right;">' + v.toFixed(1) + '</td>';
+      }
+      return '<td>' + escapeHtml(String(v)) + '</td>';
+    }).join('');
+    return '<tr>' + cells + '</tr>';
+  }).join('');
+
+  // Pagination UI
+  pagination.innerHTML = '<button class="pagination-btn" onclick="goPage(1)" ' + (STATE.dashboardPage <= 1 ? 'disabled' : '') + '>«</button>'
+    + '<button class="pagination-btn" onclick="goPage(' + (STATE.dashboardPage-1) + ')" ' + (STATE.dashboardPage <= 1 ? 'disabled' : '') + '>‹</button>'
+    + '<span style="font-size:12px;padding:0 8px;">第 ' + STATE.dashboardPage + ' / ' + totalPages + ' 页 (' + rows.length + ' 条)</span>'
+    + '<button class="pagination-btn" onclick="goPage(' + (STATE.dashboardPage+1) + ')" ' + (STATE.dashboardPage >= totalPages ? 'disabled' : '') + '>›</button>'
+    + '<button class="pagination-btn" onclick="goPage(' + totalPages + ')" ' + (STATE.dashboardPage >= totalPages ? 'disabled' : '') + '>»</button>';
+}
+
+function sortDashboard(key) {
+  if (STATE.dashboardSort.key === key) {
+    STATE.dashboardSort.asc = !STATE.dashboardSort.asc;
+  } else {
+    STATE.dashboardSort.key = key;
+    STATE.dashboardSort.asc = false;
+  }
+  renderDashboardTable();
+}
+
+function goPage(page) {
+  STATE.dashboardPage = page;
+  renderDashboardTable();
+}
+
+// ==================== TAB 2: TREND CHART ====================
+function renderTrendChart() {
+  const indicator = document.getElementById('trend-indicator').value;
+  if (!indicator) return;
+
+  const chartDom = document.getElementById('trend-chart');
+  if (STATE.trendChart) STATE.trendChart.dispose();
+  STATE.trendChart = echarts.init(chartDom);
+
+  const data = STATE.filteredData;
+  const employee = document.getElementById('trend-employee').value;
+  const showTarget = document.getElementById('trend-show-target').checked;
+  const type = STATE.trendType;
+  const cfg = getConfig();
+
+  const dateMap = {};
+  data.forEach(r => {
+    if (employee && r.员工姓名 !== employee) return;
+    const date = r.日期;
+    if (!dateMap[date]) dateMap[date] = [];
+    const v = parseFloat(r[indicator]);
+    if (!isNaN(v)) dateMap[date].push(v);
+  });
+
+  const sortedDates = Object.keys(dateMap).sort();
+  const values = sortedDates.map(d => {
+    const vals = dateMap[d];
+    return vals.reduce((a,b) => a+b, 0) / vals.length;
+  });
+
+  const c = cfg[indicator] || { targetDay: 90 };
+  const target = c.targetDay;
+
+  const series = [{
+    name: indicator,
+    type: type,
+    data: values,
+    smooth: true,
+    lineStyle: { width: 3 },
+    areaStyle: { opacity: 0.1 },
+    itemStyle: { color: '#3b82f6' },
+  }];
+
+  if (showTarget) {
+    series.push({
+      name: '目标值',
+      type: 'line',
+      data: sortedDates.map(() => target),
+      lineStyle: { width: 2, type: 'dashed', color: '#ef4444' },
+      symbol: 'none',
+    });
+  }
+
+  STATE.trendChart.setOption({
+    tooltip: { trigger: 'axis', valueFormatter: function(v) { return typeof v === 'number' ? v.toFixed(1) + '%' : v; } },
+    legend: { data: series.map(s => s.name), textStyle: { color: 'var(--text2)' } },
+    grid: { left: 60, right: 20, top: 50, bottom: 30 },
+    xAxis: { type: 'category', data: sortedDates, axisLabel: { color: 'var(--text2)', fontSize: 11 } },
+    yAxis: { type: 'value', axisLabel: { color: 'var(--text2)' }, splitLine: { lineStyle: { color: 'var(--border)' } } },
+    series: series,
+    backgroundColor: 'transparent',
+  });
+}
+
+function setTrendType(type) {
+  STATE.trendType = type;
+  document.getElementById('trend-btn-line').className = 'btn btn-outline btn-sm' + (type === 'line' ? ' btn-primary' : '');
+  document.getElementById('trend-btn-bar').className = 'btn btn-outline btn-sm' + (type === 'bar' ? ' btn-primary' : '');
+  renderTrendChart();
+}
+
+function populateTrendSelects() {
+  const sel = document.getElementById('trend-indicator');
+  sel.innerHTML = '<option value="">请选择指标...</option>' + INDICATOR_DEFS.map(d => '<option value="' + d.key + '">' + d.key + ' (' + d.module + ')</option>').join('');
+
+  const empSel = document.getElementById('trend-employee');
+  const employees = [...new Set(STATE.data.map(r => r.员工姓名))].sort();
+  empSel.innerHTML = '<option value="">全部员工(均值)</option>' + employees.map(e => '<option value="' + e + '">' + e + '</option>').join('');
+}
+
+// ==================== TAB 3: 区域人像画本 ====================
+function renderTeamStats() {
+  const container = document.getElementById('team-stats');
+  const data = STATE.filteredData;
+  if (data.length === 0) { container.innerHTML = '<div style="color:var(--text2);">暂无数据</div>'; return; }
+
+  const regionData = {};
+  data.forEach(r => {
+    const reg = r.所属区域;
+    if (!regionData[reg]) regionData[reg] = { employees: new Set(), rows: 0 };
+    regionData[reg].employees.add(r.员工姓名);
+    regionData[reg].rows++;
+  });
+
+  container.innerHTML = Object.entries(regionData).map(([reg, info]) => {
+    return '<div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center;">'
+      + '<div style="font-weight:600;font-size:16px;">' + reg + '</div>'
+      + '<div style="font-size:28px;font-weight:700;color:var(--accent);margin:4px 0;">' + info.employees.size + '</div>'
+      + '<div style="font-size:12px;color:var(--text2);">' + info.rows + ' 条数据</div></div>';
+  }).join('');
+}
+
+function renderTierCards() {
+  const container = document.getElementById('tier-cards');
+  const cfg = getConfig();
+  const data = STATE.filteredData;
+
+  const empScores = {};
+  data.forEach(r => {
+    const name = r.员工姓名;
+    if (!empScores[name]) empScores[name] = { sum: 0, count: 0 };
+    let total = 0, w = 0;
+    for (const def of INDICATOR_DEFS) {
+      const v = parseFloat(r[def.key]);
+      if (!isNaN(v)) {
+        const c = cfg[def.key] || { targetDay: def.targetDay, weight: def.weight };
+        const rate = c.targetDay > 0 ? v / c.targetDay : 0;
+        total += Math.min(rate, 1.5) * c.weight;
+        w += c.weight;
+      }
+    }
+    if (w > 0) {
+      empScores[name].sum += (total / w * 100);
+      empScores[name].count++;
+    }
+  });
+
+  const tiers = { benchmark: 0, stable: 0, improve: 0, help: 0 };
+  for (const [name, s] of Object.entries(empScores)) {
+    const avg = s.sum / s.count;
+    if (avg >= 90) tiers.benchmark++;
+    else if (avg >= 75) tiers.stable++;
+    else if (avg >= 60) tiers.improve++;
+    else tiers.help++;
+  }
+
+  const tierInfo = [
+    { key: 'benchmark', label: '🏆 标杆梯队', desc: '综合分≥90', count: tiers.benchmark, color: 'var(--green)' },
+    { key: 'stable', label: '✅ 稳定达标', desc: '75~89分', count: tiers.stable, color: 'var(--accent)' },
+    { key: 'improve', label: '⚠️ 待提升', desc: '60~74分', count: tiers.improve, color: 'var(--orange)' },
+    { key: 'help', label: '🔴 重点帮扶', desc: '<60分', count: tiers.help, color: 'var(--red)' },
+  ];
+
+  container.innerHTML = tierInfo.map(t => {
+    return '<div style="background:var(--bg3);border-radius:10px;padding:12px;border-left:4px solid ' + t.color + ';">'
+      + '<div style="font-weight:600;font-size:13px;">' + t.label + '</div>'
+      + '<div style="font-size:24px;font-weight:700;color:' + t.color + ';">' + t.count + '</div>'
+      + '<div style="font-size:11px;color:var(--text2);">' + t.desc + '</div></div>';
+  }).join('');
+}
+
+function renderRadarChart() {
+  const chartDom = document.getElementById('radar-chart');
+  if (STATE.radarChart) STATE.radarChart.dispose();
+  STATE.radarChart = echarts.init(chartDom);
+
+  const cfg = getConfig();
+  const data = STATE.filteredData;
+  if (data.length === 0) return;
+
+  const indicatorValues = {};
+  data.forEach(r => {
+    for (const def of INDICATOR_DEFS) {
+      const v = parseFloat(r[def.key]);
+      if (!isNaN(v)) {
+        if (!indicatorValues[def.key]) indicatorValues[def.key] = [];
+        indicatorValues[def.key].push(v);
+      }
+    }
+  });
+
+  const indicators = INDICATOR_DEFS.map(def => ({ name: def.key, max: 100 }));
+
+  const avgValues = INDICATOR_DEFS.map(def => {
+    const vals = indicatorValues[def.key] || [];
+    return vals.length > 0 ? +(vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : 0;
+  });
+
+  const targetValues = INDICATOR_DEFS.map(def => {
+    const c = cfg[def.key] || { targetDay: def.targetDay };
+    return c.targetDay;
+  });
+
+  STATE.radarChart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { data: ['团队均值', '目标值'], textStyle: { color: 'var(--text2)' } },
+    radar: {
+      indicator: indicators,
+      center: ['50%', '50%'],
+      radius: '65%',
+      axisName: { color: 'var(--text2)', fontSize: 10 },
+      splitArea: { areaStyle: { color: ['rgba(59,130,246,0.02)', 'rgba(59,130,246,0.02)'] } },
+    },
+    series: [{
+      type: 'radar',
+      data: [
+        { value: avgValues, name: '团队均值', lineStyle: { color: '#3b82f6' }, areaStyle: { color: 'rgba(59,130,246,0.2)' } },
+        { value: targetValues, name: '目标值', lineStyle: { color: '#ef4444', type: 'dashed' }, areaStyle: { color: 'rgba(239,68,68,0.05)' } },
+      ]
+    }],
+    backgroundColor: 'transparent',
+  });
+}
+
+function renderPersonList() {
+  const tbody = document.getElementById('person-list-tbody');
+  const data = STATE.filteredData;
+  const cfg = getConfig();
+  const tierFilter = document.getElementById('tier-filter').value;
+  const search = document.getElementById('person-search').value.trim().toLowerCase();
+
+  const empMap = {};
+  data.forEach(r => {
+    const name = r.员工姓名;
+    if (!empMap[name]) empMap[name] = { name, region: r.所属区域, sum: 0, count: 0, weaknesses: 0 };
+    let total = 0, w = 0;
+    for (const def of INDICATOR_DEFS) {
+      const v = parseFloat(r[def.key]);
+      if (!isNaN(v)) {
+        const c = cfg[def.key] || { targetDay: def.targetDay, weight: def.weight };
+        const rate = c.targetDay > 0 ? v / c.targetDay : 0;
+        if (rate < 0.7) empMap[name].weaknesses++;
+        total += Math.min(rate, 1.5) * c.weight;
+        w += c.weight;
+      }
+    }
+    if (w > 0) {
+      empMap[name].sum += (total / w * 100);
+      empMap[name].count++;
+    }
+  });
+
+  let list = Object.values(empMap).map(e => ({ ...e, score: e.count > 0 ? +(e.sum / e.count).toFixed(1) : 0 }));
+
+  if (tierFilter !== 'all') {
+    list = list.filter(e => {
+      if (tierFilter === 'benchmark') return e.score >= 90;
+      if (tierFilter === 'stable') return e.score >= 75 && e.score < 90;
+      if (tierFilter === 'improve') return e.score >= 60 && e.score < 75;
+      if (tierFilter === 'help') return e.score < 60;
+      return true;
+    });
+  }
+
+  if (search) list = list.filter(e => e.name.toLowerCase().includes(search));
+
+  list.sort((a,b) => b.score - a.score);
+
+  document.getElementById('person-list-count').textContent = list.length + ' 人';
+
+  tbody.innerHTML = list.map((e, i) => {
+    const tier = e.score >= 90 ? '🏆 标杆' : e.score >= 75 ? '✅ 达标' : e.score >= 60 ? '⚠️ 待提升' : '🔴 帮扶';
+    const star = i < 3 ? '⭐⭐⭐' : i < 6 ? '⭐⭐' : i < 10 ? '⭐' : '';
+    const badgeClass = e.weaknesses > 3 ? 'badge-danger' : e.weaknesses > 1 ? 'badge-warning' : 'badge-success';
+    return '<tr><td>' + star + '</td><td>' + escapeHtml(e.name) + '</td><td>' + escapeHtml(e.region) + '</td><td><b>' + e.score + '</b></td><td>' + tier + '</td><td><span class="badge ' + badgeClass + '">' + e.weaknesses + '</span></td></tr>';
+  }).join('');
+}
+
+// ==================== LOAD MOCK DATA ====================
+function loadMockData() {
+  STATE.data = generateMockData();
+  STATE.personnel = [...MOCK_PERSONNEL];
+  STATE.config = getConfig();
+  populateFilterUI();
+  applyFilters();
+  populateTrendSelects();
+  renderPersonnelTable();
+  renderConfigPanel();
+  document.getElementById('data-status-badge').textContent = '✅ 模拟数据就绪';
+  document.getElementById('row-count-badge').textContent = '总行数: ' + STATE.data.length;
+  document.getElementById('status-indicator').innerHTML = '✅ 模拟数据已加载';
+  updateStatusBar();
+  if (STATE.currentTab === 'tab2') renderTrendChart();
+  if (STATE.currentTab === 'tab3') { renderTeamStats(); renderTierCards(); renderRadarChart(); renderPersonList(); }
+}
+
+// ==================== FILE UPLOAD ====================
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) { alert('文件格式错误'); return; }
+    const headers = lines[0].split(',');
+    const rows = lines.slice(1).map(line => {
+      const vals = line.split(',');
+      const row = {};
+      headers.forEach((h, i) => row[h.trim()] = vals[i] ? vals[i].trim() : '');
+      return row;
+    });
+    STATE.data = STATE.data.concat(rows);
+    applyFilters();
+    populateTrendSelects();
+    document.getElementById('row-count-badge').textContent = '总行数: ' + STATE.data.length;
+    document.getElementById('data-status-badge').textContent = '✅ 已加载文件数据';
+    alert('✅ 成功导入 ' + rows.length + ' 行数据');
+  } catch(e) {
+    alert('文件解析失败: ' + e.message);
+  }
+  event.target.value = '';
+}
+
+function clearAllData() {
+  if (!confirm('确定清空所有数据？')) return;
+  STATE.data = [];
+  STATE.filteredData = [];
+  applyFilters();
+  populateTrendSelects();
+  document.getElementById('row-count-badge').textContent = '总行数: 0';
+  document.getElementById('data-status-badge').textContent = '📭 无数据';
+  document.getElementById('status-indicator').innerHTML = '📭 未加载数据';
+  renderKPICards();
+  renderDashboardTable();
+  renderPersonnelTable();
+}
+
+// ==================== EXPORT ====================
+function exportDashboard() {
+  const data = STATE.filteredData;
+  if (data.length === 0) { alert('暂无数据可导出'); return; }
+  const headers = Object.keys(data[0]);
+  let csv = headers.join(',') + '\n';
+  data.forEach(row => {
+    csv += headers.map(h => {
+      const v = row[h];
+      return typeof v === 'string' && v.includes(',') ? '"' + v + '"' : v;
+    }).join(',') + '\n';
+  });
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = '业绩明细_' + new Date().toISOString().substring(0,10) + '.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+// ==================== UTILS ====================
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ==================== REFRESH ALL ====================
+function refreshAll() {
+  applyFilters();
+  renderConfigPanel();
+  renderPersonnelTable();
+  if (STATE.currentTab === 'tab2') renderTrendChart();
+  if (STATE.currentTab === 'tab3') { renderTeamStats(); renderTierCards(); renderRadarChart(); renderPersonList(); }
+}
+
+// ==================== INIT ====================
+initTheme();
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadMockData();
+  const savedCfg = localStorage.getItem('indicator_config');
+  if (savedCfg) {
+    try { STATE.config = JSON.parse(savedCfg); } catch(e) {}
+  }
+  renderConfigPanel();
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>

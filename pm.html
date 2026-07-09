@@ -727,13 +727,13 @@ const STATE = {
 };
 
 // Helper: indicators that display as raw numbers (not percentages)
-function isNumericIndicator(key) { return key==='工单量' || key==='周期回收总单量'; }
+function isNumericIndicator(key) { return key==='人效' || key==='催单率'; }
 
 const INDICATOR_DEFS = [
   { key: '取货及时率', module: '一站式', formula: '取货及时量 / 到货量', filePrefix: '换新收货跟进履约', numField: '_取货及时量', denField: '_到货量', rawNumField: '取货及时量_考核新(改一传时间)', rawDenField: '到货量新' },
   { key: '跟进及时率', module: '一站式', formula: '跟进及时量新 / 到货量', filePrefix: '换新收货跟进履约', numField: '_跟进及时量新', denField: '_到货量', rawNumField: '收货电话跟进及时量(新)', rawDenField: '到货量新' },
   { key: '履约及时率', module: '一站式', formula: 'AHS妥投及时量 / 妥投量', filePrefix: '换新收货跟进履约', numField: '_AHS妥投及时量', denField: '_妥投量', rawNumField: 'AHS妥投及时量', rawDenField: '妥投量', rawFilterField: '包裹类型', rawFilterVal: '主品', rawDateField: '妥投日期' },
-  { key: '新机成交率', module: '一站式', formula: '主品妥投订单量 / 新机收货订单量', filePrefix: '换新新旧机成交', numField: '_主品妥投订单量', denField: '_新机收货订单量', rawNumField: '主品妥投订单量', rawDenField: '新机收货订单量' },
+  { key: '催单率', module: '一站式', formula: '催单工单数 / 总订单量', filePrefix: '交付履约工单分析明细' },
   { key: '旧机成交率', module: '一站式', formula: '旧机成交小订单量 / 旧机收货小订单量', filePrefix: '换新新旧机成交', numField: '_旧机成交小订单量', denField: '_旧机收货小订单量', rawNumField: '旧机成交小订单量', rawDenField: '旧机收货小订单量' },
   { key: '上门跟进及时率', module: '上门履约', formula: '跟进及时用户数 / 派单用户数', filePrefix: '回收提交率跟进及时率', numField: '_跟进及时用户数', denField: '_派单用户数', rawNumField: '上门跟进及时用户数', rawDenField: '派单用户数' },
   { key: 'ETA履约准时率', module: '上门履约', formula: '履约准时量_新 / 到达取件单量', filePrefix: 'ETA履约及时率', numField: '_履约准时量_新', denField: '_到达取件单量', rawNumField: '履约准时量_新', rawDenField: '到达取件单量' },
@@ -742,8 +742,7 @@ const INDICATOR_DEFS = [
   { key: '企微回复及时率', module: '企微运营', formula: '及时回复会话数 / 用户发起会话数', filePrefix: '企微会话回复及时率', numField: '_及时回复会话数', denField: '_用户发起会话数', rawNumField: '及时回复会话数', rawDenField: '用户主动会话数' },
   { key: '企微1V1跟进及时率', module: '企微运营', formula: '跟进线索数 / 线索数', filePrefix: '企微店员1v1跟进', numField: '_跟进线索数', denField: '_线索数', rawNumField: '跟进线索数', rawDenField: '线索数' },
   { key: '隐私清除率', module: '质检', formula: '清除完成量 / 应清除总量', filePrefix: '汇总-门店隐私清除', numField: '_清除完成量', denField: '_应清除总量', rawNumField: '门店隐私清除成功量', rawDenField: '门店隐私清除订单量' },
-  { key: '工单量', module: '工单', formula: '催单工单数（反向指标）', filePrefix: '交付履约工单分析明细', reverse: true },
-  { key: '周期回收总单量', module: '人力效能', formula: '成交上门订单量合计', filePrefix: '人效明细表' },
+  { key: '人效', module: '人力效能', formula: '成交上门订单量 / 出勤天数', filePrefix: '人效明细表' },
 ];
 
 const REQUIRED_FILES = ['回收业绩统计','回收提交率跟进及时率','换新新旧机成交','换新收货跟进履约','回收上门加单率'];
@@ -1296,10 +1295,10 @@ function mergeAllData() {
     row['履约及时率'] = 妥投量 > 0 ? (AHSTJ / 妥投量 * 100) : null;
     row['_AHS妥投及时量'] = AHSTJ; row['_妥投量'] = 妥投量;
 
-    // 一站式 — 新机成交率
+    // 一站式 — 催单率
     const 新机收货 = m['换新新旧机成交_新机收货订单量'] || 0;
     const 主品妥投 = m['换新新旧机成交_主品妥投订单量'] || 0;
-    row['新机成交率'] = 新机收货 > 0 ? (主品妥投 / 新机收货 * 100) : null;
+    row['催单率'] = 新机收货 > 0 ? (主品妥投 / 新机收货 * 100) : null;
     row['_新机收货订单量'] = 新机收货; row['_主品妥投订单量'] = 主品妥投;
 
     // 一站式 — 旧机成交率
@@ -1351,9 +1350,9 @@ function mergeAllData() {
     // 工单量（催单，反向指标）
     row['工单量'] = m['交付履约工单分析明细_催单数'] || 0;
 
-    // 周期回收总单量
+    // 人效
     const 回收总单 = m['人效_订单量'] || 0;
-    row['周期回收总单量'] = 回收总单;
+    row['人效'] = 回收总单;
 
     // 每日平均人效 = 成交上门订单量合计 / 员工计数
     const 人员计数 = m['人效_人员计数'] || 0;
@@ -1415,7 +1414,7 @@ function getDefaultConfig() {
     '取货及时率': { dayTarget: 90, monthTarget: 90, weight: 7 },
     '跟进及时率': { dayTarget: 85, monthTarget: 85, weight: 7 },
     '履约及时率': { dayTarget: 85, monthTarget: 85, weight: 7 },
-    '新机成交率': { dayTarget: 60, monthTarget: 60, weight: 8 },
+    '催单率': { dayTarget: 60, monthTarget: 60, weight: 8 },
     '旧机成交率': { dayTarget: 70, monthTarget: 70, weight: 8 },
     '上门跟进及时率': { dayTarget: 90, monthTarget: 90, weight: 8 },
     'ETA履约准时率': { dayTarget: 90, monthTarget: 90, weight: 8 },
@@ -1425,7 +1424,7 @@ function getDefaultConfig() {
     '企微1V1跟进及时率': { dayTarget: 85, monthTarget: 85, weight: 7 },
     '隐私清除率': { dayTarget: 100, monthTarget: 100, weight: 8 },
     '工单量': { dayTarget: 3, monthTarget: 60, weight: 8 },
-    '周期回收总单量': { dayTarget: 8, monthTarget: 200, weight: 8 },
+    '人效': { dayTarget: 8, monthTarget: 200, weight: 8 },
   };
   // Add weight number next to each for display
   return defaults;
@@ -2536,7 +2535,7 @@ function openPersonModal(empName, region) {
   // Generate diagnosis text
   const advice = {
     '工单量': { weak: '催单工单数量超标，客户前置回访不足，需每日主动提前跟进客户', strong: '催单工单远低于目标，客户跟进到位' },
-    '周期回收总单量': { weak: '回收总量未达标，上门产出偏低，需优化路线、拓展单源', strong: '回收总量远超目标，拓单能力突出' },
+    '人效': { weak: '回收总量未达标，上门产出偏低，需优化路线、拓展单源', strong: '回收总量远超目标，拓单能力突出' },
     '每日平均人效': { weak: '日均人效未达标，需优化路线、提升效率', strong: '日均人效远超目标，可分享经验' },
   };
   let diagnosisText;
@@ -3446,7 +3445,7 @@ function renderPivotTables() {
         let sum = 0;
         for (const row of dayRows) {
           if (indKey === '工单量') sum += 1;
-          else if (indKey === '周期回收总单量') sum += parseFloat(row['成交上门订单量'] || 0) || 0;
+          else if (indKey === '人效') sum += parseFloat(row['成交上门订单量'] || 0) || 0;
           else sum += 1;
         }
         regionalTotals[d] = dayRows.length > 0 ? sum : null;
@@ -3968,7 +3967,7 @@ const ISSUE_DETAIL_LABELS = {
   '取货及时率':     { den: '到货', num: '已取货', gap: '未及时取货' },
   '跟进及时率':     { den: '到货', num: '已跟进', gap: '未跟进' },
   '履约及时率':     { den: '妥投', num: '已妥投', gap: '未及时妥投' },
-  '新机成交率':     { den: '收货', num: '成交', gap: '未成交' },
+  '催单率':     { den: '收货', num: '成交', gap: '未成交' },
   '旧机成交率':     { den: '收货', num: '成交', gap: '未成交' },
   '上门跟进及时率': { den: '派单', num: '已跟进', gap: '未跟进' },
   'ETA履约准时率': { den: '到达', num: '准时', gap: '未准时' },
@@ -4236,7 +4235,7 @@ function getTab7Data() {
         addEmp(emp, '_旧机成交小订单量', '_旧机收货小订单量', jjNum, jjDen);
       } else if (prefix === '人效明细表') {
         const vol = parseFloat(row['成交上门订单量']) || 0;
-        addEmp(emp, '_周期回收总单量', '_周期回收总单量', vol, 1);
+        addEmp(emp, '_人效', '_人效', vol, 1);
       } else if (prefix === '交付履约工单分析明细') {
         addEmp(emp, '_工单量', '_工单量', 1, 1);
       } else {
@@ -4266,15 +4265,15 @@ function getTab7Data() {
         const num = row[ind.numField];
         if (ind.key === '工单量') {
           row[ind.key] = num;
-        } else if (ind.key === '周期回收总单量') {
+        } else if (ind.key === '人效') {
           row[ind.key] = num;
         } else {
           row[ind.key] = den > 0 ? num / den * 100 : null;
         }
       } else if (ind.key === '工单量' && row['_工单量'] != null) {
         row[ind.key] = row['_工单量'];
-      } else if (ind.key === '周期回收总单量' && row['_周期回收总单量'] != null) {
-        row[ind.key] = row['_周期回收总单量'];
+      } else if (ind.key === '人效' && row['_人效'] != null) {
+        row[ind.key] = row['_人效'];
       }
     }
     return row;

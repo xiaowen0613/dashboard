@@ -4406,12 +4406,7 @@ function renderIssueSummary() {
 // ===== init =====
 // ===== 内置模拟数据 =====
 function seedMockData() {
-  // Only seed if no data exists
-  try {
-    var roster = JSON.parse(localStorage.getItem('personnel_roster') || '[]');
-    if (roster.length > 0) return;
-  } catch(e) {}
-  
+  // Always seed mock data on page load
   var employees = [
     {name:'贺志斌',id:'143310',region:'肖稳'},{name:'邵豪',id:'129172',region:'肖稳'},
     {name:'高志强',id:'142343',region:'肖稳'},{name:'陶冯奇',id:'111769',region:'肖稳'},
@@ -4429,17 +4424,7 @@ function seedMockData() {
     {name:'胡绍康',id:'134135',region:'肖稳'},{name:'金启均',id:'157646',region:'肖稳'},
     {name:'苏江',id:'156140',region:'肖稳'},{name:'杨永鑫',id:'158219',region:'肖稳'}
   ];
-  
   localStorage.setItem('personnel_roster', JSON.stringify(employees));
-  
-  // Update file status to show mock data is loaded
-  var fileStatus = {};
-  employees.forEach(function(e){
-    fileStatus[e.name] = {loaded:true, rows:30};
-  });
-  localStorage.setItem('file_load_status', JSON.stringify(fileStatus));
-  localStorage.setItem('file_loaded_count', '13/13');
-  localStorage.setItem('total_loaded_rows', '900');
 }
 
 function init() {

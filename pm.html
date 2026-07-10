@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="biz_data_light.js"></script>
 <script>
 tailwind.config = {
   darkMode: 'class',
@@ -333,7 +334,13 @@ tr:hover td.sticky-col { background:var(--bg3); }
   </style>
   <div class="card">
     <h3 style="font-weight:600;margin:0 0 4px 0;">📊 成都二区 · 区域指标达成概览</h3>
-    <p style="font-size:13px;color:var(--text2);margin:0 0 12px 0;">各业务模块指标达成情况 · 绿色≥目标 ｜ 黄色≥80% ｜ 红色&lt;80%</p>
+    <p style="font-size:13px;color:var(--text2);margin:0 0 12px 0;">绿色≥目标 ｜ 黄色≥80% ｜ 红色&lt;80%</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <select id="bizEmpSelect" style="width:180px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg2);color:var(--text);" onchange="renderBusiness(this.value)">
+        <option value="">🏙️ 团队均值</option>
+      </select>
+      <span style="font-size:12px;color:var(--text2);" id="bizStatus"></span>
+    </div>
     <div id="bizContent"></div>
   </div>
 </div>
@@ -1885,68 +1892,60 @@ function loadPanelStates() {
 
 // ==================== TAB SWITCHING ====================
 let _tabRendered = {};
-function renderBusiness() {
-  var biz = [
-    {section:'📱 3C业务', metrics:[
-      {name:'提交成交率',val:56.4,target:78,unit:'%'},
-      {name:'跟进及时率',val:93.9,target:95,unit:'%'},
-      {name:'上门率',val:81.7,target:80,unit:'%'},
-      {name:'上门后成交率',val:86.3,target:85,unit:'%'},
-      {name:'加单率',val:10.7,target:8.5,unit:'%'},
-      {name:'加单额',val:2800,target:1500,unit:''},
-      {name:'ETA准时率',val:99.4,target:98,unit:'%'}
-    ]},
-    {section:'🔄 一站式换新业务', metrics:[
-      {name:'取货及时率',val:98.0,target:96,unit:'%'},
-      {name:'跟进及时率',val:99.4,target:98,unit:'%'},
-      {name:'履约及时率',val:81.6,target:92.5,unit:'%'},
-      {name:'旧机成交率',val:0.0,target:88,unit:'%'}
-    ]},
-    {section:'👥 用户运营', metrics:[
-      {name:'企微回复及时率',val:0.0,target:85,unit:'%'},
-      {name:'交付添加率',val:87.7,target:88,unit:'%'},
-      {name:'企微1V1回复及时率',val:89.7,target:90,unit:'%'}
-    ]},
-    {section:'✅ 质量业务', metrics:[
-      {name:'质检准确率',val:96.8,target:95,unit:'%'},
-      {name:'退货损失额率',val:1.2,target:1,unit:'%'},
-      {name:'隐私清除率',val:97.4,target:95,unit:'%'}
-    ]},
-    {section:'💡 体验业务', metrics:[
-      {name:'催单率',val:23.5,target:2,unit:'%'},
-      {name:'客诉率',val:1.5,target:2,unit:'%'},
-      {name:'工单回复及时率',val:91.2,target:90,unit:'%'},
-      {name:'工单创建后电联率',val:88.6,target:90,unit:'%'}
-    ]},
-    {section:'💰 利润侧', metrics:[
-      {name:'入库及时率',val:94.7,target:95,unit:'%'},
-      {name:'成交人效',val:10.5,target:10,unit:''},
-      {name:'议价费率',val:0.5,target:2,unit:'%'},
-      {name:'BD业绩达成率',val:76.4,target:100,unit:'%'},
-      {name:'自营业绩达成率',val:82.1,target:100,unit:'%'}
-    ]},
-    {section:'📦 多品类业务', metrics:[
-      {name:'多品类成交额达成率',val:78.5,target:100,unit:'%'},
-      {name:'跟进及时率',val:92.3,target:95,unit:'%'},
-      {name:'上门率',val:74.6,target:80,unit:'%'},
-      {name:'报价真接受率',val:82.1,target:85,unit:'%'}
-    ]}
+function renderBusiness(empName) {
+  var data = (empName && BIZ_EMP[empName]) ? BIZ_EMP[empName] : BIZ_TEAM;
+  var title = empName ? empName + ' · 个人指标' : '成都二区 · 区域指标达成概览';
+  
+  // 定义指标映射
+  var metricMap = [
+    {section:'📱 3C业务', key:'提交成交率', target:78, unit:'%'},
+    {section:'📱 3C业务', key:'跟进及时率', target:95, unit:'%'},
+    {section:'📱 3C业务', key:'上门率', target:80, unit:'%'},
+    {section:'📱 3C业务', key:'上门后成交率', target:85, unit:'%'},
+    {section:'📱 3C业务', key:'加单率', target:8.5, unit:'%'},
+    {section:'📱 3C业务', key:'加单额', target:1500, unit:''},
+    {section:'📱 3C业务', key:'ETA准时率', target:98, unit:'%'},
+    {section:'🔄 一站式换新业务', key:'取货及时率', target:96, unit:'%'},
+    {section:'🔄 一站式换新业务', key:'一站式跟进及时率', target:98, unit:'%'},
+    {section:'🔄 一站式换新业务', key:'履约及时率', target:92.5, unit:'%'},
+    {section:'🔄 一站式换新业务', key:'旧机成交率', target:88, unit:'%'},
+    {section:'👥 用户运营', key:'交付添加率', target:88, unit:'%'},
+    {section:'👥 用户运营', key:'企微1V1回复及时率', target:90, unit:'%'},
+    {section:'✅ 质量业务', key:'隐私清除率', target:95, unit:'%'},
+    {section:'💡 体验业务', key:'催单率', target:2, unit:'%'},
+    {section:'💰 利润侧', key:'入库及时率', target:95, unit:'%'},
+    {section:'💰 利润侧', key:'人效', target:10, unit:''},
+    {section:'💰 利润侧', key:'议价费率', target:2, unit:'%'}
   ];
+  
+  // 更新标题
+  var titleEl = document.querySelector('#tabBusiness h3');
+  if (titleEl) titleEl.textContent = '📊 ' + title;
+  
   var html = '';
-  biz.forEach(function(s){
-    html += '<div class="biz-section"><div class="biz-section-title">'+s.section+'</div><div class="biz-cards">';
-    s.metrics.forEach(function(m){
-      var higher = m.name.indexOf('率')>=0||m.name.indexOf('及时')>=0;
-      var pct = m.target>0 ? Math.round(m.val/m.target*100) : 0;
-      var cls = higher ? (m.val>=m.target?'biz-ok':(m.val>=m.target*0.8?'biz-warn':'biz-bad')) : (m.val<=m.target?'biz-ok':(m.val<=m.target*1.2?'biz-warn':'biz-bad'));
-      var barCls = cls==='biz-ok'?'#16a34a':(cls==='biz-warn'?'#f97316':'#dc2626');
-      var display = m.unit==='%' ? m.val.toFixed(1)+'%' : m.val.toFixed(0);
-      var tgtDisplay = m.unit==='%' ? m.target+'%' : m.target.toFixed(0);
-      html += '<div class="biz-card '+cls+'"><div class="hdr">'+m.name+'</div><div class="val">'+display+'</div><div class="tgt">目标：'+tgtDisplay+'｜达成率'+pct+'%</div><div class="bar"><div class="bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+barCls+'"></div></div></div>';
-    });
-    html += '</div></div>';
+  var currentSec = '';
+  metricMap.forEach(function(m){
+    if (m.section !== currentSec) {
+      if (currentSec) html += '</div></div>';
+      currentSec = m.section;
+      html += '<div class="biz-section"><div class="biz-section-title">'+m.section+'</div><div class="biz-cards">';
+    }
+    var val = data[m.key];
+    if (val === undefined || val === null) val = 0;
+    var target = m.target;
+    var higher = m.unit === '%' || m.key.indexOf('率')>=0;
+    var pct = target > 0 ? Math.round(val/target*100) : 0;
+    var cls = higher ? (val>=target?'biz-ok':(val>=target*0.8?'biz-warn':'biz-bad')) : (val<=target?'biz-ok':(val<=target*1.2?'biz-warn':'biz-bad'));
+    var barCls = cls==='biz-ok'?'#16a34a':(cls==='biz-warn'?'#f97316':'#dc2626');
+    var display = m.unit==='%' ? val.toFixed(1)+'%' : val.toFixed(0);
+    var tgtDisplay = m.unit==='%' ? target+'%' : target.toFixed(0);
+    html += '<div class="biz-card '+cls+'"><div class="hdr">'+m.key+'</div><div class="val">'+display+'</div><div class="tgt">目标：'+tgtDisplay+'｜达成率'+pct+'%</div><div class="bar"><div class="bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+barCls+'"></div></div></div>';
   });
-  document.getElementById('bizContent').innerHTML = html;
+  html += '</div></div>';
+  
+  if (document.getElementById('bizContent')) {
+    document.getElementById('bizContent').innerHTML = html;
+  }
 }
 let _tabDirty = {};
 
@@ -4433,7 +4432,20 @@ function init() {
   // Generate mock data if no data exists
   seedMockData();
   
-  // Render business overview first - has its own data
+  // Load biz emp selector
+var bizSel = document.getElementById('bizEmpSelect');
+if (bizSel && typeof BIZ_EMP !== 'undefined') {
+  Object.keys(BIZ_EMP).sort().forEach(function(n){
+    var o = document.createElement('option');
+    o.value = n; o.textContent = n;
+    bizSel.appendChild(o);
+  });
+}
+if (bizSel && bizSel.value === '') {
+  renderBusiness('');
+}
+
+// Render business overview first - has its own data
   renderBusiness();
   
   applyTheme();

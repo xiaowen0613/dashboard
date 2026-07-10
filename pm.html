@@ -1896,7 +1896,6 @@ function renderBusiness(empName) {
   var data = (empName && BIZ_EMP[empName]) ? BIZ_EMP[empName] : BIZ_TEAM;
   var title = empName ? empName + ' · 个人指标' : '成都二区 · 区域指标达成概览';
   
-  // 定义指标映射
   var metricMap = [
     {section:'📱 3C业务', key:'提交成交率', target:78, unit:'%'},
     {section:'📱 3C业务', key:'跟进及时率', target:95, unit:'%'},
@@ -1909,13 +1908,25 @@ function renderBusiness(empName) {
     {section:'🔄 一站式换新业务', key:'一站式跟进及时率', target:98, unit:'%'},
     {section:'🔄 一站式换新业务', key:'履约及时率', target:92.5, unit:'%'},
     {section:'🔄 一站式换新业务', key:'旧机成交率', target:88, unit:'%'},
+    {section:'👥 用户运营', key:'企微回复及时率', target:85, unit:'%'},
     {section:'👥 用户运营', key:'交付添加率', target:88, unit:'%'},
     {section:'👥 用户运营', key:'企微1V1回复及时率', target:90, unit:'%'},
+    {section:'✅ 质量业务', key:'质检准确率', target:95, unit:'%'},
+    {section:'✅ 质量业务', key:'退货损失额率', target:1, unit:'%'},
     {section:'✅ 质量业务', key:'隐私清除率', target:95, unit:'%'},
     {section:'💡 体验业务', key:'催单率', target:2, unit:'%'},
+    {section:'💡 体验业务', key:'客诉率', target:2, unit:'%'},
+    {section:'💡 体验业务', key:'工单回复及时率', target:90, unit:'%'},
+    {section:'💡 体验业务', key:'工单创建后电联率', target:90, unit:'%'},
     {section:'💰 利润侧', key:'入库及时率', target:95, unit:'%'},
     {section:'💰 利润侧', key:'人效', target:10, unit:''},
-    {section:'💰 利润侧', key:'议价费率', target:2, unit:'%'}
+    {section:'💰 利润侧', key:'议价费率', target:2, unit:'%'},
+    {section:'💰 利润侧', key:'BD业绩达成率', target:100, unit:'%'},
+    {section:'💰 利润侧', key:'自营业绩达成率', target:100, unit:'%'},
+    {section:'📦 多品类业务', key:'多品类成交额达成率', target:100, unit:'%'},
+    {section:'📦 多品类业务', key:'多品类跟进及时率', target:95, unit:'%'},
+    {section:'📦 多品类业务', key:'多品类上门率', target:80, unit:'%'},
+    {section:'📦 多品类业务', key:'报价真接受率', target:85, unit:'%'}
   ];
   
   // 更新标题
@@ -1931,15 +1942,18 @@ function renderBusiness(empName) {
       html += '<div class="biz-section"><div class="biz-section-title">'+m.section+'</div><div class="biz-cards">';
     }
     var val = data[m.key];
-    if (val === undefined || val === null) val = 0;
-    var target = m.target;
-    var higher = m.unit === '%' || m.key.indexOf('率')>=0;
-    var pct = target > 0 ? Math.round(val/target*100) : 0;
-    var cls = higher ? (val>=target?'biz-ok':(val>=target*0.8?'biz-warn':'biz-bad')) : (val<=target?'biz-ok':(val<=target*1.2?'biz-warn':'biz-bad'));
-    var barCls = cls==='biz-ok'?'#16a34a':(cls==='biz-warn'?'#f97316':'#dc2626');
-    var display = m.unit==='%' ? val.toFixed(1)+'%' : val.toFixed(0);
-    var tgtDisplay = m.unit==='%' ? target+'%' : target.toFixed(0);
-    html += '<div class="biz-card '+cls+'"><div class="hdr">'+m.key+'</div><div class="val">'+display+'</div><div class="tgt">目标：'+tgtDisplay+'｜达成率'+pct+'%</div><div class="bar"><div class="bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+barCls+'"></div></div></div>';
+    if (val === undefined || val === null) {
+      html += '<div class="biz-card biz-bad"><div class="hdr">'+m.key+'</div><div class="val" style="font-size:16px;color:#999">暂无数据</div><div class="tgt">目标：'+(m.unit==='%'?m.target+'%':m.target)+'</div><div class="bar"><div class="bar-fill" style="width:0%;background:#ddd"></div></div></div>';
+    } else {
+      var target = m.target;
+      var higher = m.unit === '%' || m.key.indexOf('率')>=0;
+      var pct = target > 0 ? Math.round(val/target*100) : 0;
+      var cls = higher ? (val>=target?'biz-ok':(val>=target*0.8?'biz-warn':'biz-bad')) : (val<=target?'biz-ok':(val<=target*1.2?'biz-warn':'biz-bad'));
+      var barCls = cls==='biz-ok'?'#16a34a':(cls==='biz-warn'?'#f97316':'#dc2626');
+      var display = m.unit==='%' ? val.toFixed(1)+'%' : val.toFixed(0);
+      var tgtDisplay = m.unit==='%' ? target+'%' : target.toFixed(0);
+      html += '<div class="biz-card '+cls+'"><div class="hdr">'+m.key+'</div><div class="val">'+display+'</div><div class="tgt">目标：'+tgtDisplay+'｜达成率'+pct+'%</div><div class="bar"><div class="bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+barCls+'"></div></div></div>';
+    }
   });
   html += '</div></div>';
   

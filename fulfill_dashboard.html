@@ -115,9 +115,9 @@ function render(){
     radarData.push({value:[e.rateV,e.rateD,e.cancel,e.hold], name:emp});
   }
   radarChart.setOption({
-    tooltip:{},
+    tooltip:{formatter:function(p){var v=p.value;return p.name+"<br/>上门率："+v[0]+"%<br/>成交率："+v[1]+"%<br/>取消量："+v[2]+"单<br/>暂缓量："+v[3]+"单";}},
     legend:{bottom:0},
-    radar:{indicator:[{name:'上门率%',max:100},{name:'成交率%',max:100},{name:'取消量',max:10},{name:'暂缓量',max:10}]},
+    radar:{indicator:[{name:'上门率',max:100},{name:'成交率',max:100},{name:'取消量',max:10},{name:'暂缓量',max:10}]},
     series:[{type:'radar',data:radarData}]
   }, true);
 

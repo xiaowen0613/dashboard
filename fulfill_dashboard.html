@@ -59,10 +59,13 @@ var DETAIL = {"2026-08-15": [{"order": "P20260815104320977251", "emp": "邹迎�
 var dates = Object.keys(DATA).sort();
 
 var dateSel = document.getElementById('dateSel');
-dateSel.innerHTML = dates.map(function(d){return '<option value="'+d+'">'+d+'</option>';}).join('');
-dateSel.value = dates[dates.length-1];
+dateSel.innerHTML = '<option value="__all__">全部日期(整月汇总)</option>' + dates.map(function(d){return '<option value="'+d+'">'+d+'</option>';}).join('');
+dateSel.value = '__all__';
 
-function allEmps(date){return Object.keys(DATA[date]).sort();}
+function allEmps(date){
+  if(date==='__all__'){var s={};dates.forEach(function(d){Object.keys(DATA[d]).forEach(function(n){s[n]=1;});});return Object.keys(s).sort();}
+  return Object.keys(DATA[date]).sort();
+}
 function fillEmps(keep){
   var sel = document.getElementById('empSel');
   var prev = sel.value;
@@ -92,10 +95,26 @@ try{
 function render(){
   var date = dateSel.value;
   var emp = document.getElementById('empSel').value;
-  var map = DATA[date];
-  if(!map) return;
+  var map = date==='__all__' ? null : DATA[date];
+  if(!map && date!=='__all__') return;
+  var map2 = map || {};
+  if(date==='__all__'){
+    map2 = {};
+    dates.forEach(function(d){
+      Object.keys(DATA[d]).forEach(function(n){
+        var e = DATA[d][n];
+        if(!map2[n]) map2[n] = {i:e.i, task:0, visit:0, deal:0, cancel:0, hold:0, rateV:0, rateD:0};
+        map2[n].task+=e.task; map2[n].visit+=e.visit; map2[n].deal+=e.deal; map2[n].cancel+=e.cancel; map2[n].hold+=e.hold;
+      });
+    });
+    Object.keys(map2).forEach(function(n){
+      var e=map2[n];
+      e.rateV = e.task>0?Math.round(e.visit/e.task*1000)/10:0;
+      e.rateD = e.visit>0?Math.round(e.deal/e.visit*1000)/10:0;
+    });
+  }
   var names = emp==='__all__' ? allEmps(date) : [emp];
-  var rows = names.map(function(n){return map[n];}).filter(Boolean);
+  var rows = names.map(function(n){return map2[n];}).filter(Boolean);
   var t = teamStat(rows);
 
   document.getElementById('cards').innerHTML = [
@@ -115,9 +134,12 @@ function render(){
 
   // 取消/暂缓明细
   var details = [];
-  (DETAIL[date]||[]).forEach(function(x){
-    if(emp!=='__all__' && x.emp!==emp) return;
-    details.push(x);
+  var detailDates = date==='__all__' ? dates : [date];
+  detailDates.forEach(function(d){
+    (DETAIL[d]||[]).forEach(function(x){
+      if(emp!=='__all__' && x.emp!==emp) return;
+      details.push(x);
+    });
   });
   var cancels = details.filter(function(x){return x.type==='取消';});
   var holds = details.filter(function(x){return x.type==='暂缓';});
@@ -157,7 +179,7 @@ function render(){
     var radarVals;
     var radarName;
     if(emp==='__all__'){ radarVals=[+t.rateV,+t.rateD,Math.min(t.cancel,10),Math.min(t.hold,10)]; radarName='团队平均'; }
-    else { var e=map[emp]; radarVals=[e.rateV,e.rateD,Math.min(e.cancel,10),Math.min(e.hold,10)]; radarName=emp; }
+    else { var e=map2[emp]; radarVals=[e.rateV,e.rateD,Math.min(e.cancel,10),Math.min(e.hold,10)]; radarName=emp; }
     radarChart.setOption({
       tooltip:{backgroundColor:'rgba(255,255,255,0.96)',borderColor:'#e2e8f0',textStyle:{color:'#334155',fontSize:12},formatter:function(p){var names=['上门率','成交率','取消量','暂缓量'];var v=p.value[p.dataIndex];var suf=p.dataIndex>=2?'单':'%';return names[p.dataIndex]+'：'+v+suf;}},
       legend:{bottom:0,textStyle:{fontSize:12,color:'#64748b'}},

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>当日派单履约看板</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#1e293b;padding:20px}
+.hd{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:24px;border-radius:12px;margin-bottom:16px}
+.hd h1{font-size:22px;margin-bottom:4px}.hd p{font-size:13px;opacity:.7}
+.cb{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:end}
+.fld{display:flex;flex-direction:column;gap:2px}
+.fld label{font-size:11px;color:#64748b;font-weight:600}
+.fld select,.fld input{padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;background:#fff;min-width:130px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.card{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card .n{font-size:26px;font-weight:700;color:#0f172a}
+.card .l{font-size:12px;color:#64748b;margin-top:4px}
+.card .s{font-size:11px;color:#94a3b8;margin-top:2px}
+.green .n{color:#22c55e}.red .n{color:#ef4444}.orange .n{color:#f59e0b}.blue .n{color:#3b82f6}.purple .n{color:#8b5cf6}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:900px){.row{grid-template-columns:1fr}}
+.pn{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.pn h3{font-size:15px;margin-bottom:12px;color:#0f172a}
+.chart{height:300px}
+.tw{overflow:auto;max-height:420px;border:1px solid #e2e8f0;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f8fafc;padding:7px 8px;text-align:left;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;font-size:11px;white-space:nowrap;cursor:pointer}
+td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+tr:hover td{background:#f8fafc}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.tag-bad{background:#fee2e2;color:#dc2626}.tag-ok{background:#dcfce7;color:#16a34a}
+.low{color:#dc2626;font-weight:700}
+</style>
+</head>
+<body>
+<div class="hd">
+  <h1>📊 当日派单履约看板</h1>
+  <p>上门率=已上门÷有效交付任务量 · 成交率=上门后成交量÷已上门 · 取消量/暂缓量=单数</p>
+</div>
+<div class="cb">
+  <div class="fld"><label>📅 日期</label><select id="dateSel"></select></div>
+  <div class="fld"><label>👤 员工</label><select id="empSel"><option value="__all__">全部员工</option></select></div>
+</div>
+<div class="cards" id="cards"></div>
+<div class="row">
+  <div class="pn"><h3>📈 团队趋势（上门率/成交率）</h3><div id="trendChart" class="chart"></div></div>
+  <div class="pn"><h3>🎯 员工雷达图画像</h3><div id="radarChart" class="chart"></div></div>
+</div>
+<div class="pn"><h3>📋 员工明细</h3><div class="tw"><table><thead><tr><th>员工</th><th>有效交付任务量</th><th>已上门</th><th>上门后成交量</th><th>当日派单上门率</th><th>当日派单上门后成交率</th><th>当日派单取消量</th><th>当日派单暂缓量</th></tr></thead><tbody id="tbl"></tbody></table></div></div>
+<script>
+var DATA = {"2026-08-14": {"夏天": {"i": "144695", "task": 15.0, "visit": 15.0, "deal": 12.0, "cancel": 0.0, "hold": 2.0, "rateV": 100.0, "rateD": 80.0}, "王兵": {"i": "109129", "task": 13.0, "visit": 12.0, "deal": 7.0, "cancel": 0.0, "hold": 2.0, "rateV": 92.3, "rateD": 58.3}, "丁俊杰": {"i": "157347", "task": 11.0, "visit": 11.0, "deal": 6.0, "cancel": 2.0, "hold": 2.0, "rateV": 100.0, "rateD": 54.5}, "王品富": {"i": "141378", "task": 11.0, "visit": 9.0, "deal": 9.0, "cancel": 0.0, "hold": 0.0, "rateV": 81.8, "rateD": 100.0}, "周毅": {"i": "132962", "task": 16.0, "visit": 15.0, "deal": 9.0, "cancel": 3.0, "hold": 1.0, "rateV": 93.8, "rateD": 60.0}, "吕李正": {"i": "142728", "task": 11.0, "visit": 11.0, "deal": 8.0, "cancel": 0.0, "hold": 1.0, "rateV": 100.0, "rateD": 72.7}, "汪佳林": {"i": "144519", "task": 11.0, "visit": 9.0, "deal": 7.0, "cancel": 0.0, "hold": 0.0, "rateV": 81.8, "rateD": 77.8}, "任志强": {"i": "144923", "task": 9.0, "visit": 7.0, "deal": 4.0, "cancel": 0.0, "hold": 1.0, "rateV": 77.8, "rateD": 57.1}, "岳林涛": {"i": "115822", "task": 13.0, "visit": 12.0, "deal": 9.0, "cancel": 2.0, "hold": 0.0, "rateV": 92.3, "rateD": 75.0}, "李征东": {"i": "116546", "task": 13.0, "visit": 13.0, "deal": 10.0, "cancel": 1.0, "hold": 1.0, "rateV": 100.0, "rateD": 76.9}, "郑世华": {"i": "156138", "task": 19.0, "visit": 16.0, "deal": 11.0, "cancel": 1.0, "hold": 1.0, "rateV": 84.2, "rateD": 68.8}, "吴乔林": {"i": "143276", "task": 16.0, "visit": 13.0, "deal": 11.0, "cancel": 1.0, "hold": 0.0, "rateV": 81.2, "rateD": 84.6}, "唐德祝": {"i": "143433", "task": 15.0, "visit": 15.0, "deal": 12.0, "cancel": 1.0, "hold": 0.0, "rateV": 100.0, "rateD": 80.0}, "文杨": {"i": "140904", "task": 11.0, "visit": 11.0, "deal": 6.0, "cancel": 0.0, "hold": 2.0, "rateV": 100.0, "rateD": 54.5}, "张博信": {"i": "142524", "task": 1.0, "visit": 1.0, "deal": 1.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 100.0}, "卢得鑫": {"i": "151205", "task": 13.0, "visit": 12.0, "deal": 11.0, "cancel": 0.0, "hold": 0.0, "rateV": 92.3, "rateD": 91.7}, "刘昊鑫": {"i": "156002", "task": 13.0, "visit": 12.0, "deal": 11.0, "cancel": 0.0, "hold": 1.0, "rateV": 92.3, "rateD": 91.7}}, "2026-08-15": {"王品富": {"i": "141378", "task": 14.0, "visit": 13.0, "deal": 10.0, "cancel": 0.0, "hold": 0.0, "rateV": 92.9, "rateD": 76.9}, "郑世华": {"i": "156138", "task": 16.0, "visit": 16.0, "deal": 13.0, "cancel": 0.0, "hold": 1.0, "rateV": 100.0, "rateD": 81.2}, "李征东": {"i": "116546", "task": 19.0, "visit": 16.0, "deal": 13.0, "cancel": 0.0, "hold": 3.0, "rateV": 84.2, "rateD": 81.2}, "唐德祝": {"i": "143433", "task": 14.0, "visit": 13.0, "deal": 9.0, "cancel": 0.0, "hold": 2.0, "rateV": 92.9, "rateD": 69.2}, "丁俊杰": {"i": "157347", "task": 12.0, "visit": 12.0, "deal": 10.0, "cancel": 0.0, "hold": 1.0, "rateV": 100.0, "rateD": 83.3}, "吴乔林": {"i": "143276", "task": 11.0, "visit": 9.0, "deal": 6.0, "cancel": 1.0, "hold": 0.0, "rateV": 81.8, "rateD": 66.7}, "吕李正": {"i": "142728", "task": 14.0, "visit": 14.0, "deal": 10.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 71.4}, "岳林涛": {"i": "115822", "task": 16.0, "visit": 16.0, "deal": 14.0, "cancel": 1.0, "hold": 1.0, "rateV": 100.0, "rateD": 87.5}, "徐江": {"i": "142045", "task": 24.0, "visit": 23.0, "deal": 19.0, "cancel": 2.0, "hold": 0.0, "rateV": 95.8, "rateD": 82.6}, "夏天": {"i": "144695", "task": 19.0, "visit": 17.0, "deal": 13.0, "cancel": 0.0, "hold": 2.0, "rateV": 89.5, "rateD": 76.5}, "张杰": {"i": "143214", "task": 1.0, "visit": 1.0, "deal": 1.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 100.0}, "刘昊鑫": {"i": "156002", "task": 17.0, "visit": 17.0, "deal": 13.0, "cancel": 1.0, "hold": 1.0, "rateV": 100.0, "rateD": 76.5}, "周毅": {"i": "132962", "task": 18.0, "visit": 15.0, "deal": 14.0, "cancel": 0.0, "hold": 0.0, "rateV": 83.3, "rateD": 93.3}, "王小东": {"i": "154257", "task": 1.0, "visit": 1.0, "deal": 0.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 0.0}, "李琦林": {"i": "142533", "task": 10.0, "visit": 9.0, "deal": 4.0, "cancel": 0.0, "hold": 0.0, "rateV": 90.0, "rateD": 44.4}, "邹迎宾": {"i": "152613", "task": 11.0, "visit": 11.0, "deal": 8.0, "cancel": 1.0, "hold": 1.0, "rateV": 100.0, "rateD": 72.7}, "刘林": {"i": "147233", "task": 19.0, "visit": 18.0, "deal": 14.0, "cancel": 0.0, "hold": 1.0, "rateV": 94.7, "rateD": 77.8}, "汪佳林": {"i": "144519", "task": 14.0, "visit": 12.0, "deal": 12.0, "cancel": 0.0, "hold": 0.0, "rateV": 85.7, "rateD": 100.0}, "文杨": {"i": "140904", "task": 20.0, "visit": 18.0, "deal": 12.0, "cancel": 0.0, "hold": 1.0, "rateV": 90.0, "rateD": 66.7}, "王兵": {"i": "109129", "task": 25.0, "visit": 21.0, "deal": 16.0, "cancel": 3.0, "hold": 0.0, "rateV": 84.0, "rateD": 76.2}, "姚楠坪": {"i": "144536", "task": 19.0, "visit": 18.0, "deal": 16.0, "cancel": 0.0, "hold": 1.0, "rateV": 94.7, "rateD": 88.9}, "刘成洋": {"i": "144725", "task": 1.0, "visit": 1.0, "deal": 1.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 100.0}}, "2026-08-16": {"刘昊鑫": {"i": "156002", "task": 22.0, "visit": 20.0, "deal": 18.0, "cancel": 0.0, "hold": 2.0, "rateV": 90.9, "rateD": 90.0}, "姚楠坪": {"i": "144536", "task": 17.0, "visit": 17.0, "deal": 13.0, "cancel": 0.0, "hold": 3.0, "rateV": 100.0, "rateD": 76.5}, "何茂源": {"i": "144117", "task": 17.0, "visit": 16.0, "deal": 12.0, "cancel": 2.0, "hold": 1.0, "rateV": 94.1, "rateD": 75.0}, "秦坤": {"i": "154887", "task": 14.0, "visit": 13.0, "deal": 12.0, "cancel": 0.0, "hold": 1.0, "rateV": 92.9, "rateD": 92.3}, "郑世华": {"i": "156138", "task": 13.0, "visit": 13.0, "deal": 10.0, "cancel": 1.0, "hold": 1.0, "rateV": 100.0, "rateD": 76.9}, "吕李正": {"i": "142728", "task": 13.0, "visit": 13.0, "deal": 7.0, "cancel": 2.0, "hold": 3.0, "rateV": 100.0, "rateD": 53.8}, "唐德祝": {"i": "143433", "task": 25.0, "visit": 24.0, "deal": 17.0, "cancel": 3.0, "hold": 4.0, "rateV": 96.0, "rateD": 70.8}, "丁俊杰": {"i": "157347", "task": 15.0, "visit": 15.0, "deal": 9.0, "cancel": 1.0, "hold": 5.0, "rateV": 100.0, "rateD": 60.0}, "汪佳林": {"i": "144519", "task": 16.0, "visit": 15.0, "deal": 13.0, "cancel": 1.0, "hold": 1.0, "rateV": 93.8, "rateD": 86.7}, "刘林": {"i": "147233", "task": 18.0, "visit": 17.0, "deal": 14.0, "cancel": 0.0, "hold": 0.0, "rateV": 94.4, "rateD": 82.4}, "王品富": {"i": "141378", "task": 17.0, "visit": 15.0, "deal": 14.0, "cancel": 0.0, "hold": 1.0, "rateV": 88.2, "rateD": 93.3}, "邹迎宾": {"i": "152613", "task": 20.0, "visit": 19.0, "deal": 15.0, "cancel": 1.0, "hold": 3.0, "rateV": 95.0, "rateD": 78.9}, "徐江": {"i": "142045", "task": 28.0, "visit": 26.0, "deal": 19.0, "cancel": 0.0, "hold": 4.0, "rateV": 92.9, "rateD": 73.1}, "周毅": {"i": "132962", "task": 13.0, "visit": 13.0, "deal": 10.0, "cancel": 1.0, "hold": 1.0, "rateV": 100.0, "rateD": 76.9}, "李琦林": {"i": "142533", "task": 17.0, "visit": 14.0, "deal": 8.0, "cancel": 2.0, "hold": 2.0, "rateV": 82.4, "rateD": 57.1}, "张博信": {"i": "142524", "task": 1.0, "visit": 0.0, "deal": 0.0, "cancel": 0.0, "hold": 0.0, "rateV": 0.0, "rateD": 0}, "夏天": {"i": "144695", "task": 17.0, "visit": 14.0, "deal": 13.0, "cancel": 0.0, "hold": 0.0, "rateV": 82.4, "rateD": 92.9}, "吴乔林": {"i": "143276", "task": 16.0, "visit": 15.0, "deal": 10.0, "cancel": 1.0, "hold": 2.0, "rateV": 93.8, "rateD": 66.7}, "王兵": {"i": "109129", "task": 23.0, "visit": 19.0, "deal": 17.0, "cancel": 0.0, "hold": 2.0, "rateV": 82.6, "rateD": 89.5}, "岳林涛": {"i": "115822", "task": 16.0, "visit": 16.0, "deal": 14.0, "cancel": 1.0, "hold": 1.0, "rateV": 100.0, "rateD": 87.5}, "张进孝": {"i": "111044", "task": 1.0, "visit": 1.0, "deal": 1.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 100.0}}, "2026-08-17": {"李征东": {"i": "116546", "task": 15.0, "visit": 14.0, "deal": 11.0, "cancel": 1.0, "hold": 2.0, "rateV": 93.3, "rateD": 78.6}, "姚楠坪": {"i": "144536", "task": 13.0, "visit": 10.0, "deal": 8.0, "cancel": 0.0, "hold": 1.0, "rateV": 76.9, "rateD": 80.0}, "李琦林": {"i": "142533", "task": 17.0, "visit": 12.0, "deal": 10.0, "cancel": 0.0, "hold": 0.0, "rateV": 70.6, "rateD": 83.3}, "任志强": {"i": "144923", "task": 12.0, "visit": 10.0, "deal": 4.0, "cancel": 2.0, "hold": 1.0, "rateV": 83.3, "rateD": 40.0}, "何茂源": {"i": "144117", "task": 15.0, "visit": 13.0, "deal": 10.0, "cancel": 0.0, "hold": 0.0, "rateV": 86.7, "rateD": 76.9}, "吕李正": {"i": "142728", "task": 15.0, "visit": 15.0, "deal": 12.0, "cancel": 0.0, "hold": 1.0, "rateV": 100.0, "rateD": 80.0}, "王兵": {"i": "109129", "task": 15.0, "visit": 13.0, "deal": 8.0, "cancel": 2.0, "hold": 2.0, "rateV": 86.7, "rateD": 61.5}, "卢得鑫": {"i": "151205", "task": 8.0, "visit": 8.0, "deal": 3.0, "cancel": 1.0, "hold": 4.0, "rateV": 100.0, "rateD": 37.5}, "徐江": {"i": "142045", "task": 11.0, "visit": 10.0, "deal": 9.0, "cancel": 0.0, "hold": 1.0, "rateV": 90.9, "rateD": 90.0}, "周毅": {"i": "132962", "task": 18.0, "visit": 18.0, "deal": 13.0, "cancel": 1.0, "hold": 0.0, "rateV": 100.0, "rateD": 72.2}, "汪佳林": {"i": "144519", "task": 19.0, "visit": 16.0, "deal": 14.0, "cancel": 2.0, "hold": 0.0, "rateV": 84.2, "rateD": 87.5}, "邹迎宾": {"i": "152613", "task": 19.0, "visit": 16.0, "deal": 12.0, "cancel": 1.0, "hold": 1.0, "rateV": 84.2, "rateD": 75.0}, "岳林涛": {"i": "115822", "task": 16.0, "visit": 15.0, "deal": 13.0, "cancel": 0.0, "hold": 0.0, "rateV": 93.8, "rateD": 86.7}, "郑世华": {"i": "156138", "task": 16.0, "visit": 14.0, "deal": 11.0, "cancel": 0.0, "hold": 1.0, "rateV": 87.5, "rateD": 78.6}, "文杨": {"i": "140904", "task": 15.0, "visit": 12.0, "deal": 12.0, "cancel": 0.0, "hold": 0.0, "rateV": 80.0, "rateD": 100.0}, "王品富": {"i": "141378", "task": 12.0, "visit": 6.0, "deal": 5.0, "cancel": 0.0, "hold": 1.0, "rateV": 50.0, "rateD": 83.3}, "吴乔林": {"i": "143276", "task": 1.0, "visit": 1.0, "deal": 1.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 100.0}, "陈猛": {"i": "156510", "task": 1.0, "visit": 1.0, "deal": 1.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 100.0}, "钟懿志": {"i": "9172883", "task": 1.0, "visit": 0.0, "deal": 0.0, "cancel": 0.0, "hold": 0.0, "rateV": 0.0, "rateD": 0}, "刘其乐": {"i": "120152", "task": 1.0, "visit": 1.0, "deal": 1.0, "cancel": 0.0, "hold": 0.0, "rateV": 100.0, "rateD": 100.0}}};
+var dates = Object.keys(DATA).sort();
+
+document.getElementById('dateSel').innerHTML = dates.map(function(d){return '<option value="'+d+'">'+d+'</option>';}).join('');
+var curDate = dates[dates.length-1];
+document.getElementById('dateSel').value = curDate;
+
+function allEmps(date){return Object.keys(DATA[date]).sort();}
+function fillEmps(date, keep){
+  var sel = document.getElementById('empSel');
+  var prev = sel.value;
+  sel.innerHTML = '<option value="__all__">全部员工</option>' + allEmps(date).map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('');
+  if(keep && allEmps(date).indexOf(prev)>=0) sel.value = prev;
+  else sel.value = '__all__';
+}
+fillEmps(curDate, false);
+
+var radarChart = echarts.init(document.getElementById('radarChart'));
+var trendChart = echarts.init(document.getElementById('trendChart'));
+window.addEventListener('resize', function(){radarChart.resize();trendChart.resize();});
+
+function teamStat(rows){
+  var t={task:0,visit:0,deal:0,cancel:0,hold:0};
+  rows.forEach(function(e){t.task+=e.task;t.visit+=e.visit;t.deal+=e.deal;t.cancel+=e.cancel;t.hold+=e.hold;});
+  t.rateV = t.task>0?(t.visit/t.task*100).toFixed(1):'0';
+  t.rateD = t.visit>0?(t.deal/t.visit*100).toFixed(1):'0';
+  return t;
+}
+function fmt(x){return (x||0).toLocaleString();}
+
+function render(){
+  var date = document.getElementById('dateSel').value;
+  var emp = document.getElementById('empSel').value;
+  var map = DATA[date];
+  if(!map) return;
+  var names = emp==='__all__' ? allEmps(date) : [emp];
+  var rows = names.map(function(n){return map[n];}).filter(Boolean);
+  var t = teamStat(rows);
+
+  document.getElementById('cards').innerHTML = [
+    {n:fmt(t.task),l:'有效交付任务量',c:'blue'},
+    {n:t.rateV+'%',l:'当日派单上门率',c:t.rateV>=85?'green':'red',s:t.rateV>=85?'已达标':'<85%需反馈'},
+    {n:t.rateD+'%',l:'上门后成交率',c:t.rateD>=85?'green':'red',s:t.rateD>=85?'已达标':'<85%需反馈'},
+    {n:fmt(t.cancel)+'单',l:'当日派单取消量',c:t.cancel>0?'orange':'green'},
+    {n:fmt(t.hold)+'单',l:'当日派单暂缓量',c:t.hold>0?'orange':'green'},
+  ].map(function(c){return '<div class="card '+c.c+'"><div class="n">'+c.n+'</div><div class="l">'+c.l+'</div>'+(c.s?'<div class="s">'+c.s+'</div>':'')+'</div>';}).join('');
+
+  // 明细表
+  var html = rows.map(function(e, idx){
+    var tv = e.rateV<85?'<span class="low">'+e.rateV+'%</span>':'<span class="tag tag-ok">'+e.rateV+'%</span>';
+    var td = e.rateD<85?'<span class="low">'+e.rateD+'%</span>':'<span class="tag tag-ok">'+e.rateD+'%</span>';
+    return '<tr><td>'+names[rows.indexOf(e)]+'</td><td>'+e.task+'</td><td>'+e.visit+'</td><td>'+e.deal+'</td><td>'+tv+'</td><td>'+td+'</td><td>'+e.cancel+'</td><td>'+e.hold+'</td></tr>';
+  }).join('');
+  document.getElementById('tbl').innerHTML = html;
+
+  // 雷达图（选中员工或全部平均）
+  var radarData = [];
+  if(emp==='__all__'){
+    radarData.push({value:[+t.rateV,+t.rateD,t.cancel,t.hold], name:'团队平均'});
+  } else {
+    var e = map[emp];
+    radarData.push({value:[e.rateV,e.rateD,e.cancel,e.hold], name:emp});
+  }
+  radarChart.setOption({
+    tooltip:{},
+    legend:{bottom:0},
+    radar:{indicator:[{name:'上门率%',max:100},{name:'成交率%',max:100},{name:'取消量',max:10},{name:'暂缓量',max:10}]},
+    series:[{type:'radar',data:radarData}]
+  }, true);
+
+  // 团队趋势
+  var allT = dates.map(function(d){
+    var names2 = allEmps(d);
+    var rows2 = names2.map(function(n){return DATA[d][n];}).filter(Boolean);
+    var st = teamStat(rows2);
+    return {d:d, v:parseFloat(st.rateV), dv:parseFloat(st.rateD)};
+  });
+  trendChart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:{bottom:0},
+    xAxis:{type:'category',data:allT.map(function(x){return x.d.slice(5);})},
+    yAxis:{type:'value',max:100},
+    series:[
+      {name:'上门率%',type:'line',data:allT.map(function(x){return x.v;}),smooth:true,itemStyle:{color:'#3b82f6'}},
+      {name:'成交率%',type:'line',data:allT.map(function(x){return x.dv;}),smooth:true,itemStyle:{color:'#22c55e'}}
+    ]
+  }, true);
+}
+
+document.getElementById('dateSel').onchange = function(){fillEmps(this.value, false);render();};
+document.getElementById('empSel').onchange = render;
+render();
+</script>
+</body></html>
